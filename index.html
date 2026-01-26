@@ -52,6 +52,7 @@
         .travel-icon-box { position: absolute; left: -11px; top: 50%; transform: translateY(-50%); background: white; padding: 2px 0; }
         .loading-overlay { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .card-shadow { box-shadow: 0 4px 20px rgba(216, 27, 96, 0.08); }
+        .modal-blur { backdrop-filter: blur(4px); }
     </style>
 </head>
 <body>
@@ -60,8 +61,8 @@
     <div v-if="!user" class="login-overlay p-8 text-center">
         <div class="p-8 bg-white rounded-[40px] shadow-2xl border border-pink-50">
             <h2 class="text-3xl font-black text-sakura-rose mb-2 italic">Hokkaido 2026</h2>
-            <p class="text-slate-400 text-sm mb-10">登入後啟用雲端自動備份功能</p>
-            <button @click="login" class="flex items-center justify-center w-full bg-white border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 active:scale-95 transition-all shadow-sm">
+            <p class="text-slate-400 text-sm mb-10">登入後即可啟用雲端自動備份功能</p>
+            <button @click="login" class="flex items-center justify-center w-full bg-white border-2 border-slate-100 py-4 rounded-2xl font-bold hover:bg-slate-50 active:scale-95 shadow-sm">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 帳號登入
             </button>
         </div>
@@ -109,10 +110,12 @@
                                 </div>
                             </div>
                             <div class="ml-2 flex flex-col space-y-2">
-                                <button v-if="isAdmin" @click="moveItem(index, -1)" v-show="index > 0" class="w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[10px] shadow-sm"><i class="fa-solid fa-arrow-up"></i></button>
-                                <button v-if="isAdmin" @click="moveItem(index, 1)" v-show="index < currentItinerary.length - 1" class="w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[10px] shadow-sm"><i class="fa-solid fa-arrow-down"></i></button>
+                                <template v-if="isAdmin">
+                                    <button @click="moveItem(index, -1)" v-if="index > 0" class="w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[10px] shadow-sm"><i class="fa-solid fa-arrow-up"></i></button>
+                                    <button @click="moveItem(index, 1)" v-if="index < currentItinerary.length - 1" class="w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[10px] shadow-sm"><i class="fa-solid fa-arrow-down"></i></button>
+                                    <button @click="openEditModal(item, index)" class="w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-xs shadow-sm"><i class="fa-solid fa-pencil"></i></button>
+                                </template>
                                 <button @click="openMap(item.address || item.name)" class="w-8 h-8 bg-nav-blue text-white rounded-full flex items-center justify-center shadow-md active:scale-90 transition-all"><i class="fa-solid fa-location-arrow text-xs"></i></button>
-                                <button v-if="isAdmin" @click="openEditModal(item, index)" class="w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-xs shadow-sm"><i class="fa-solid fa-pencil"></i></button>
                             </div>
                         </div>
                     </div>
@@ -128,7 +131,7 @@
                         <div class="flex-1"><label class="text-[10px] text-cyan-200 block mb-1 uppercase font-bold">TWD (台幣)</label><div class="w-full bg-white/10 rounded-xl px-3 py-2.5 text-white font-bold text-lg border border-transparent">$ {{ (jpyInput * 0.215).toFixed(0) }}</div></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-50">
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 card-shadow">
                     <h3 class="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex items-center"><i class="fa-solid fa-hotel text-indigo-400 mr-2"></i> 住宿資訊</h3>
                     <ul class="space-y-6">
                         <li v-for="hotel in hotels" :key="hotel.name" class="border-b border-slate-50 last:border-0 pb-4 last:pb-0">
@@ -139,10 +142,7 @@
                                 </div>
                                 <button @click="openMap(hotel.address)" class="w-10 h-10 rounded-full bg-nav-blue text-white flex items-center justify-center shadow-md active:scale-90 transition-all"><i class="fa-solid fa-location-arrow text-sm"></i></button>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-2 space-y-1">
-                                <p><i class="fa-solid fa-phone mr-2"></i>{{ hotel.phone }}</p>
-                                <p><i class="fa-solid fa-map-pin mr-2"></i>{{ hotel.address }}</p>
-                            </div>
+                            <div class="text-[11px] text-slate-400 mt-2 space-y-1"><p><i class="fa-solid fa-phone mr-2"></i>{{ hotel.phone }}</p><p><i class="fa-solid fa-map-pin mr-2"></i>{{ hotel.address }}</p></div>
                         </li>
                     </ul>
                 </div>
@@ -150,7 +150,7 @@
 
             <div v-if="currentTab === 'shopping'" class="animate-fade-in">
                 <div class="grid grid-cols-2 gap-4">
-                    <div v-for="(item, idx) in shoppingList" :key="idx" class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 relative group">
+                    <div v-for="(item, idx) in shoppingList" :key="idx" class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 relative group card-shadow">
                         <div class="aspect-square bg-slate-50 rounded-xl mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center">
                             <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
                             <i v-else class="fa-solid fa-bag-shopping text-slate-200 text-3xl"></i>
@@ -166,17 +166,17 @@
                 <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl text-center mb-6">
                     <p class="text-sm opacity-80 mb-2 font-bold text-center w-full">我的總花費 (JPY)</p>
                     <h2 class="text-5xl font-black">¥ {{ formatNumber(totalJPY) }}</h2>
-                    <p class="text-sm text-right mt-2 opacity-80 font-bold">約 NT$ {{ formatNumber(totalTWD) }}</p>
+                    <p class="text-sm text-right mt-2 opacity-80 font-bold italic">約 NT$ {{ formatNumber(totalTWD) }}</p>
                 </div>
-                <div class="bg-white rounded-t-[40px] min-h-[400px] p-6 shadow-sm border border-slate-50">
-                    <div v-for="(exp, idx) in expenses" :key="exp.id" class="flex items-center justify-between border-b border-slate-50 pb-4 mb-4 last:border-0 animate-fade-in">
+                <div class="bg-white rounded-t-[40px] min-h-[400px] p-6 shadow-sm border border-slate-50 card-shadow">
+                    <div v-for="(exp, idx) in expenses" :key="exp.id" class="flex items-center justify-between border-b border-slate-50 pb-4 mb-4 last:border-0">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div>
+                            <div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px] shadow-inner">{{ exp.category }}</div>
                             <div><p class="font-bold text-slate-700 text-sm">{{ exp.name }}</p><p class="text-[10px] text-slate-400">{{ exp.date }}</p></div>
                         </div>
                         <div class="flex items-center">
                             <p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p>
-                            <button @click="removeExpense(idx)" class="ml-3 text-red-100 hover:text-red-400 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                            <button @click="removeExpense(idx)" class="ml-3 text-red-100 hover:text-red-400 transition-all"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
                 </div>
@@ -195,7 +195,7 @@
                     <input type="file" ref="fileInput" class="hidden" @change="handleImageUpload">
                     <div v-if="!newShoppingItem.image">
                         <i class="fa-solid fa-camera text-4xl text-slate-300 mb-2"></i>
-                        <p class="text-xs text-slate-400 font-bold text-center">點擊上傳商品照片</p>
+                        <p class="text-xs text-slate-400 font-bold">點擊上傳商品照片</p>
                     </div>
                     <img v-else :src="newShoppingItem.image" class="w-full h-32 object-contain">
                 </div>
@@ -214,7 +214,7 @@
                 <input v-model="newExp.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold">
                 <div class="relative flex items-center bg-slate-50 rounded-xl p-4">
                     <span class="text-slate-400 font-bold mr-2 text-lg">¥</span>
-                    <input v-model.number="newExp.amount" type="number" class="w-full bg-transparent border-none text-sm font-bold outline-none">
+                    <input v-model.number="newExp.amount" type="number" class="w-full bg-transparent border-none text-sm font-bold outline-none" placeholder="金額">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold">
@@ -224,27 +224,27 @@
                 </div>
             </div>
             <div class="flex space-x-3 mt-8">
-                <button @click="showExpenseModal = false" class="flex-1 py-4 bg-[#EEF2F6] text-[#64748B] font-bold rounded-2xl">取消</button>
-                <button @click="addExpense" class="flex-1 py-4 bg-[#FFD54F] text-[#01579B] font-bold rounded-2xl shadow-lg">儲存</button>
+                <button @click="showExpenseModal = false" class="flex-1 py-4 bg-[#EEF2F6] text-[#64748B] font-bold rounded-2xl text-sm">取消</button>
+                <button @click="addExpense" class="flex-1 py-4 bg-[#FFD54F] text-[#01579B] font-bold rounded-2xl shadow-lg text-sm">儲存</button>
             </div>
         </div>
     </div>
 
     <div v-if="showEditModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
         <div class="bg-white rounded-[35px] w-full max-w-sm p-8 shadow-2xl max-h-[85vh] overflow-y-auto">
-            <h3 class="font-bold text-xl mb-6 text-center text-slate-800 text-center">編輯行程</h3>
+            <h3 class="font-bold text-xl mb-6 text-center text-slate-800">編輯行程</h3>
             <div class="space-y-4">
                 <select v-model="editingItem.category" class="w-full bg-slate-50 rounded-xl p-3 text-sm outline-none border-none"><option value="flight">航班</option><option value="sightseeing">景點</option><option value="food">飲食</option><option value="accommodation">住宿</option><option value="transport">交通</option></select>
                 <input v-model="editingItem.name" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold">
-                <input v-model="editingItem.address" type="text" placeholder="導航地址" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none">
+                <input v-model="editingItem.address" type="text" placeholder="導航地址" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none text-xs">
                 <div class="flex space-x-3"><input v-model="editingItem.startTime" type="text" class="w-1/2 bg-slate-50 rounded-xl p-4 text-sm outline-none border-none"><select v-model="editingItem.transportType" class="w-1/2 bg-slate-50 rounded-xl p-4 text-sm outline-none border-none"><option value="walk">步行</option><option value="car">自駕</option><option value="bus">巴士</option><option value="public">公共運輸</option><option value="flight">飛機</option></select></div>
                 <input v-model="editingItem.stayDuration" type="text" placeholder="預計停留時間" class="w-full bg-white border border-pink-100 rounded-xl p-4 text-sm outline-none font-bold">
-                <textarea v-model="editingItem.note" rows="5" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold" placeholder="詳細備註"></textarea>
+                <textarea v-model="editingItem.note" rows="5" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none text-xs" placeholder="備註內容"></textarea>
             </div>
             <div class="flex space-x-3 mt-8">
                 <button @click="showEditModal = false" class="flex-1 py-4 bg-[#EEF2F6] text-[#64748B] font-bold rounded-2xl text-sm">取消</button>
-                <button @click="deleteItem" class="flex-1 py-4 bg-[#FFF1F2] text-[#F43F5E] font-bold rounded-2xl text-sm text-center">刪除</button>
-                <button @click="saveItem" class="flex-1 py-4 bg-sakura-rose text-white font-bold rounded-2xl text-sm shadow-lg text-center">儲存修改</button>
+                <button @click="deleteItem" class="flex-1 py-4 bg-[#FFF1F2] text-[#F43F5E] font-bold rounded-2xl text-sm">刪除</button>
+                <button @click="saveItem" class="flex-1 py-4 bg-sakura-rose text-white font-bold rounded-2xl shadow-lg text-sm">儲存修改</button>
             </div>
         </div>
     </div>
@@ -295,9 +295,9 @@
                         onSnapshot(doc(db, "users", u.uid), (snap) => {
                             if (snap.exists()) {
                                 const cloud = snap.data();
-                                // 優化：只在初始化或資料長度不符時更新，減少閃爍
-                                shoppingList.value = cloud.s || [];
-                                expenses.value = cloud.e || [];
+                                // 只在資料夾長度改變時才刷新，避免打字或小變動導致閃爍
+                                if (JSON.stringify(cloud.e) !== JSON.stringify(expenses.value)) expenses.value = cloud.e || [];
+                                if (JSON.stringify(cloud.s) !== JSON.stringify(shoppingList.value)) shoppingList.value = cloud.s || [];
                             }
                         });
                     } else { user.value = null; }
@@ -305,51 +305,62 @@
                 });
             });
 
-            // 存檔機制
-            const saveToCloud = () => {
+            // 雲端同步輔助函式
+            const syncToCloud = async () => {
                 if (!user.value) return;
-                window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.value.uid), {
-                    s: JSON.parse(JSON.stringify(shoppingList.value)), 
-                    e: JSON.parse(JSON.stringify(expenses.value)), 
-                    lastSync: new Date()
+                const { db, doc, setDoc } = window.fb;
+                // 使用 JSON 深度拷貝移除反應式 Proxy，避免 Firebase 錯誤
+                await setDoc(doc(db, "users", user.value.uid), {
+                    s: JSON.parse(JSON.stringify(shoppingList.value)),
+                    e: JSON.parse(JSON.stringify(expenses.value)),
+                    lastUpdate: new Date()
                 }, { merge: true });
             };
 
-            // 手動觸發雲端儲存，而非每次 watch 觸發，能解決部分競爭問題
-            const addExpense = () => {
-                if(!newExp.value.amount || !newExp.value.name) return;
-                expenses.value.unshift({ ...newExp.value, id: Date.now() });
-                saveToCloud();
-                showExpenseModal.value = false;
-                newExp.value = { name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) };
-            };
-
-            const removeExpense = (idx) => {
-                if(confirm("確定刪除此筆支出？")) {
-                    expenses.value.splice(idx, 1);
-                    saveToCloud();
+            const addExpense = async () => {
+                if (!newExp.value.name || newExp.value.amount === null || newExp.value.amount === undefined) {
+                    alert("請輸入完整的品名與金額");
+                    return;
+                }
+                const newEntry = { ...newExp.value, id: Date.now() };
+                expenses.value.unshift(newEntry);
+                
+                try {
+                    await syncToCloud();
+                    showExpenseModal.value = false;
+                    newExp.value = { name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) };
+                } catch (err) {
+                    alert("雲端備份失敗，請確認網路連線");
+                    console.error(err);
                 }
             };
 
-            const addShoppingItem = () => {
+            const removeExpense = async (idx) => {
+                if(confirm("確定刪除此筆支出紀錄？")) {
+                    expenses.value.splice(idx, 1);
+                    await syncToCloud();
+                }
+            };
+
+            const addShoppingItem = async () => {
                 if(!newShoppingItem.value.name) return;
                 shoppingList.value.unshift({ ...newShoppingItem.value, id: Date.now() });
-                saveToCloud();
+                await syncToCloud();
                 showShoppingModal.value = false;
                 newShoppingItem.value = { name: '', image: null };
             };
 
-            const removeShoppingItem = (idx) => {
-                if(confirm("確定刪除此項清單？")) {
+            const removeShoppingItem = async (idx) => {
+                if(confirm("確定從購物清單移除？")) {
                     shoppingList.value.splice(idx, 1);
-                    saveToCloud();
+                    await syncToCloud();
                 }
             };
 
-            // 行政管理功能
+            // Admin Logic
             const openEditModal = (item, index) => { editingItem.value = JSON.parse(JSON.stringify(item)); editingIndex.value = index; showEditModal.value = true; };
             const saveItem = () => { itineraryData.value[selectedDateIndex.value][editingIndex.value] = editingItem.value; showEditModal.value = false; };
-            const deleteItem = () => { if(confirm('確定刪除此行程？')) { itineraryData.value[selectedDateIndex.value].splice(editingIndex.value, 1); showEditModal.value = false; } };
+            const deleteItem = () => { if(confirm('確定刪除？')) { itineraryData.value[selectedDateIndex.value].splice(editingIndex.value, 1); showEditModal.value = false; } };
             const moveItem = (idx, dir) => {
                 const list = itineraryData.value[selectedDateIndex.value];
                 const newIdx = idx + dir;
@@ -357,10 +368,10 @@
             };
             const exportGistJson = () => {
                 const content = { itineraryData: itineraryData.value, hotels: hotels.value };
-                navigator.clipboard.writeText(JSON.stringify(content, null, 2)).then(() => alert("已複製！請貼回 Gist。"));
+                navigator.clipboard.writeText(JSON.stringify(content, null, 2)).then(() => alert("管理員，最新行程代碼已複製！"));
             };
 
-            // 基礎方法
+            // UI Helpers
             const triggerFileInput = () => fileInput.value.click();
             const handleImageUpload = (e) => {
                 const reader = new FileReader();
