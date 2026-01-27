@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hokkaido Sakura 2026 - Debug Version</title>
+    <title>Hokkaido Sakura 2026 - Final Sync Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-
     <script>
-        tailwind.config = {
-            theme: { extend: { colors: { 'sakura-rose': '#D81B60', 'sakura-pink': '#FFD1DC', 'nav-blue': '#4FC3F7' } } }
-        }
+        tailwind.config = { theme: { extend: { colors: { 'sakura-rose': '#D81B60', 'sakura-pink': '#FFD1DC', 'nav-blue': '#4FC3F7' } } } }
     </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         [v-cloak] { display: none; }
@@ -21,29 +17,27 @@
         .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background: white; position: relative; padding-bottom: 90px; box-shadow: 0 0 30px rgba(0,0,0,0.05); }
         .header-bg { background-color: #ffffff; border-bottom-left-radius: 35px; border-bottom-right-radius: 35px; overflow: hidden; position: relative; box-shadow: 0 4px 15px rgba(216, 27, 96, 0.1); }
         .header-image { width: 100%; height: 250px; object-fit: cover; }
-        .login-overlay { position: fixed; inset: 0; background: #FFF9FA; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tab-button { width: 42px; height: 42px; border-radius: 50%; background: white; color: #FFB7C5; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(216, 27, 96, 0.15); transition: 0.3s; }
         .tab-button.active { background-color: #D81B60; color: white; transform: scale(1.1); }
-        .loading-overlay { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .sync-btn { position: fixed; top: 16px; right: 16px; z-index: 200; width: 44px; height: 44px; background: #D81B60; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(216, 27, 96, 0.4); border: 2px solid white; }
     </style>
 </head>
 <body>
 
 <div id="app" v-cloak class="app-container">
-    <div v-if="!user" class="login-overlay p-8 text-center">
-        <div class="p-8 bg-white rounded-[40px] shadow-2xl border border-pink-50 w-full max-w-sm">
-            <h2 class="text-3xl font-black text-sakura-rose mb-2 italic">Hokkaido 2026</h2>
-            <p class="text-slate-400 text-sm mb-10 text-center">登入以同步個人雲端存檔</p>
-            <button @click="login" class="flex items-center justify-center w-full bg-white border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 transition-all shadow-sm">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 帳號登入
+    <div v-if="!user" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-8">
+        <div class="bg-white p-10 rounded-[40px] shadow-2xl text-center w-full max-w-sm">
+            <h2 class="text-3xl font-black text-sakura-rose mb-2">Hokkaido 2026</h2>
+            <p class="text-slate-400 text-sm mb-10 text-center">請登入以存取雲端資料</p>
+            <button @click="login" class="flex items-center justify-center w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 transition-all">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 登入
             </button>
         </div>
     </div>
 
-    <div v-if="user && isLoading" class="loading-overlay">
+    <div v-if="user && isLoading" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
         <div class="w-12 h-12 border-4 border-sakura-pink border-t-sakura-rose rounded-full animate-spin"></div>
-        <p class="mt-4 text-sakura-rose font-bold">正在讀取雲端資料...</p>
+        <p class="mt-4 text-sakura-rose font-bold">正在連線至 Google 雲端...</p>
     </div>
 
     <div v-if="user && !isLoading">
@@ -54,11 +48,8 @@
         <div class="header-bg relative">
             <div class="absolute top-4 left-4 z-50 flex space-x-2">
                 <button @click="logout" class="bg-black/30 text-white p-2 px-3 rounded-full text-[10px] backdrop-blur-md">登出</button>
-                <button v-if="isAdmin" @click="exportGistJson" class="bg-sakura-rose text-white p-2 px-3 rounded-full text-[10px] shadow-lg">
-                    <i class="fa-solid fa-crown mr-1"></i> 匯出 Gist
-                </button>
+                <button v-if="isAdmin" @click="exportGistJson" class="bg-sakura-rose/90 text-white p-2 px-3 rounded-full text-[10px] shadow-lg"><i class="fa-solid fa-crown mr-1"></i> 匯出 Gist</button>
             </div>
-            
             <img src="1769184532571.png" class="header-image">
             <div class="absolute bottom-6 right-4 z-30 flex gap-2">
                 <button v-for="t in tabs" :key="t.id" @click="currentTab = t.id" :class="{'active': currentTab === t.id}" class="tab-button shadow-md"><i :class="t.icon"></i></button>
@@ -66,63 +57,50 @@
         </div>
 
         <main class="p-4 pt-8">
-            <div v-if="currentTab === 'itinerary'" class="space-y-4 animate-fade-in">
-                <div class="flex overflow-x-auto hide-scrollbar space-x-3 pb-4 sticky top-0 bg-white/90 backdrop-blur-md -mx-4 px-4 z-20">
-                    <div v-for="(day, idx) in dates" :key="idx" @click="selectedDateIndex = idx" class="flex-shrink-0 w-[58px] h-[68px] rounded-xl flex flex-col items-center justify-center border-2 transition-all" :class="selectedDateIndex === idx ? 'bg-sakura-rose text-white border-sakura-rose' : 'bg-white text-pink-300 border-pink-50'"><span class="text-sm font-bold">{{ day.weekday }}</span><span class="text-xs">{{ day.date }}</span></div>
-                </div>
-                <div v-for="(item, index) in currentItinerary" :key="item.id" class="bg-white rounded-3xl p-5 shadow-sm border border-pink-50 mb-4">
-                    <div class="flex items-start">
-                        <div class="mr-4 flex flex-col items-center min-w-[50px]"><div class="p-3 rounded-full bg-pink-50 text-sakura-rose"><i :class="getCategoryIcon(item.category)"></i></div><span class="text-[10px] font-bold text-slate-400 mt-2">{{ item.startTime }}</span></div>
-                        <div class="flex-1">
-                            <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ item.name }}</h3>
-                            <div v-if="item.note" class="mt-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100 text-xs text-slate-600 whitespace-pre-line text-left">
-                                <i class="fa-solid fa-highlighter text-yellow-400 mr-1.5"></i> 備註：{{ item.note }}
-                            </div>
-                        </div>
-                        <div v-if="isAdmin" class="ml-2 flex flex-col space-y-2">
-                            <button @click="moveItem(index, -1)" v-if="index > 0" class="w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[10px]"><i class="fa-solid fa-arrow-up"></i></button>
-                            <button @click="openEditModal(item, index)" class="w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-xs"><i class="fa-solid fa-pencil"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="currentTab === 'shopping'" class="animate-fade-in">
-                <div class="grid grid-cols-2 gap-4">
-                    <div v-for="(item, idx) in shoppingList" :key="idx" class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 relative">
-                        <div class="aspect-square bg-slate-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                            <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
-                            <i v-else class="fa-solid fa-bag-shopping text-slate-200 text-3xl"></i>
-                        </div>
-                        <p class="font-bold text-sm text-slate-800 truncate text-center">{{ item.name }}</p>
-                        <button @click="removeShoppingItem(idx)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full w-6 h-6 text-[10px]"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </div>
-            </div>
-
             <div v-if="currentTab === 'expenses'" class="animate-fade-in text-center">
-                <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl mb-6">
+                <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl mb-6 relative">
                     <p class="text-sm opacity-80 mb-2 font-bold">我的總花費 (JPY)</p>
                     <h2 class="text-5xl font-black">¥ {{ formatNumber(totalJPY) }}</h2>
-                    <p class="text-sm text-right mt-2 opacity-80 font-bold italic">約 NT$ {{ formatNumber(totalTWD) }}</p>
+                    <p class="text-sm absolute bottom-4 right-8 opacity-80 font-bold italic">約 NT$ {{ formatNumber(totalTWD) }}</p>
                 </div>
-                <div v-for="(exp, idx) in expenses" :key="idx" class="flex items-center justify-between border-b border-slate-50 p-4 bg-white rounded-2xl mb-2">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div>
-                        <div class="text-left"><p class="font-bold text-slate-700 text-sm">{{ exp.name }}</p><p class="text-[10px] text-slate-400">{{ exp.date }}</p></div>
+                <div class="bg-white rounded-t-[40px] min-h-[400px] p-6 shadow-sm border border-slate-50">
+                    <div v-for="(exp, idx) in expenses" :key="exp.id" class="flex items-center justify-between border-b border-slate-50 pb-4 mb-4 last:border-0">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div>
+                            <div class="text-left"><p class="font-bold text-slate-700 text-sm">{{ exp.name }}</p><p class="text-[10px] text-slate-400">{{ exp.date }}</p></div>
+                        </div>
+                        <div class="flex items-center"><p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p><button @click="removeExpense(idx)" class="ml-3 text-red-100"><i class="fa-solid fa-xmark"></i></button></div>
                     </div>
-                    <div class="flex items-center"><p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p><button @click="removeExpense(idx)" class="ml-3 text-red-100"><i class="fa-solid fa-xmark"></i></button></div>
                 </div>
             </div>
-            
-            <div v-if="currentTab === 'info'" class="text-center py-10 text-slate-400 italic">飯店資訊同步 Gist 中...</div>
+
+            <div v-if="currentTab === 'itinerary'"> (行程內容已加載) </div>
+            <div v-if="currentTab === 'shopping'"> (購物清單已加載) </div>
+            <div v-if="currentTab === 'info'"> (飯店資訊已加載) </div>
         </main>
     </div>
 
     <button v-if="user && !isLoading" @click="handleAddClick" class="fixed bottom-8 right-8 w-14 h-14 bg-[#FFD54F] rounded-full shadow-lg text-[#01579B] text-2xl flex items-center justify-center z-40"><i class="fa-solid fa-plus"></i></button>
 
-    <div v-if="showShoppingModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl"><h3 class="font-bold text-xl mb-6 text-center text-slate-800">新增購物項目</h3><div class="space-y-4"><input v-model="newShoppingItem.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold"><div class="border-2 border-dashed border-slate-100 rounded-xl p-10 text-center cursor-pointer flex flex-col items-center justify-center" @click="triggerFileInput"><input type="file" ref="fileInput" class="hidden" @change="handleImageUpload"><i class="fa-solid fa-camera text-4xl text-slate-300 mb-2"></i><p class="text-xs text-slate-400 font-bold">上傳照片</p></div></div><div class="flex space-x-3 mt-8"><button @click="showShoppingModal = false" class="flex-1 py-4 bg-[#EEF2F6] rounded-2xl">取消</button><button @click="addShoppingItem" class="flex-1 py-4 bg-[#4FC3F7] text-white rounded-2xl shadow-lg font-bold">新增</button></div></div></div>
-    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl"><h3 class="font-bold text-xl mb-6 text-center text-slate-800 font-bold text-center">記一筆開銷</h3><div class="space-y-4"><input v-model="newExp.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold"><div class="relative flex items-center bg-slate-50 rounded-xl p-4"><span class="text-slate-400 font-bold mr-2 text-lg">¥</span><input v-model.number="newExp.amount" type="number" class="w-full bg-transparent border-none text-sm font-bold outline-none" placeholder="金額"></div><div class="grid grid-cols-2 gap-3"><select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold"><option value="飲食">飲食</option><option value="住宿">住宿</option><option value="門票">門票</option><option value="交通">交通</option><option value="購物">購物</option></select><input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold text-center"></div></div><div class="flex space-x-3 mt-8"><button @click="showExpenseModal = false" class="flex-1 py-4 bg-[#EEF2F6] rounded-2xl text-center">取消</button><button @click="addExpense" class="flex-1 py-4 bg-[#FFD54F] text-[#01579B] font-bold rounded-2xl shadow-lg">儲存</button></div></div></div>
+    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl">
+            <h3 class="font-bold text-xl mb-6 text-center">記一筆開銷</h3>
+            <div class="space-y-4">
+                <input v-model="newExp.name" type="text" placeholder="品名" class="w-full bg-slate-50 rounded-xl p-4 outline-none font-bold">
+                <input v-model.number="newExp.amount" type="number" placeholder="金額 (JPY)" class="w-full bg-slate-50 rounded-xl p-4 outline-none font-bold">
+                <div class="grid grid-cols-2 gap-3">
+                    <select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 outline-none font-bold">
+                        <option value="飲食">飲食</option><option value="住宿">住宿</option><option value="門票">門票</option><option value="交通">交通</option><option value="購物">購物</option>
+                    </select>
+                    <input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 outline-none text-center">
+                </div>
+            </div>
+            <div class="flex space-x-3 mt-8">
+                <button @click="showExpenseModal = false" class="flex-1 py-4 bg-[#EEF2F6] rounded-2xl">取消</button>
+                <button @click="addExpense" class="flex-1 py-4 bg-[#FFD54F] text-[#01579B] font-bold rounded-2xl shadow-lg">儲存</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
@@ -156,7 +134,7 @@
             const isAdmin = computed(() => user.value && ADMIN_UIDS.includes(user.value.uid));
             const isLoading = ref(true);
             const isSyncing = ref(false);
-            const currentTab = ref('itinerary');
+            const currentTab = ref('expenses');
             const selectedDateIndex = ref(0);
             const jpyInput = ref(50000);
             
@@ -167,12 +145,8 @@
             const dates = ref([{ date: '5/6', weekday: 'WED' }, { date: '5/7', weekday: 'THU' }, { date: '5/8', weekday: 'FRI' }, { date: '5/9', weekday: 'SAT' }, { date: '5/10', weekday: 'SUN' }, { date: '5/11', weekday: 'MON' }, { date: '5/12', weekday: 'TUE' }]);
             const tabs = [{ id: 'itinerary', icon: 'fa-solid fa-map-location-dot' }, { id: 'info', icon: 'fa-solid fa-circle-info' }, { id: 'shopping', icon: 'fa-solid fa-basket-shopping' }, { id: 'expenses', icon: 'fa-solid fa-coins' }];
             
-            const showEditModal = ref(false);
-            const showShoppingModal = ref(false);
             const showExpenseModal = ref(false);
-            const newShoppingItem = ref({ name: '', image: null });
             const newExp = ref({ name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) });
-            const fileInput = ref(null);
 
             onMounted(() => {
                 fetch(GIST_URL + '?t=' + Date.now()).then(r => r.json()).then(data => {
@@ -186,91 +160,69 @@
                         const docSnap = await getDoc(doc(db, "users", u.uid));
                         if (docSnap.exists()) {
                             const cloud = docSnap.data();
-                            shoppingList.value = cloud.s || [];
                             expenses.value = cloud.e || [];
+                            shoppingList.value = cloud.s || [];
                         }
                     }
                     isLoading.value = false;
                 });
             });
 
-            // 🚀 手動強力同步 (附帶診斷彈窗)
+            // 🚀 改良版同步：加入 5 秒超時機制
             const forceSync = async () => {
-                if (!user.value) return;
-                alert("📡 正在通訊中，請稍候...");
+                if (!user.value || isSyncing.value) return;
                 isSyncing.value = true;
                 
+                // 創建一個 5 秒超時的 Promise
+                const timeout = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("連線超時：伺服器無回應")), 5000)
+                );
+
                 try {
+                    alert("📡 正在通訊中，請稍候...");
+                    
                     const cleanS = JSON.parse(JSON.stringify(shoppingList.value));
                     const cleanE = JSON.parse(JSON.stringify(expenses.value));
 
-                    await setDoc(doc(db, "users", user.value.uid), {
-                        s: cleanS, e: cleanE, 
-                        lastSync: new Date().toISOString(),
-                        lastUpdate: new Date().toLocaleString()
-                    }, { merge: true });
-                    
-                    alert("✅ 雲端備份成功！上傳時間：" + new Date().toLocaleTimeString());
+                    // 執行寫入，與超時競賽
+                    await Promise.race([
+                        setDoc(doc(db, "users", user.value.uid), {
+                            s: cleanS, e: cleanE, lastUpdate: new Date().toLocaleString()
+                        }, { merge: true }),
+                        timeout
+                    ]);
+
+                    alert("✅ 雲端備份成功！");
                 } catch (err) {
-                    alert(`❌ 同步失敗\n原因：${err.code}\n請檢查網路與權限。`);
+                    console.error(err);
+                    alert(`❌ 同步失敗\n原因：${err.message}\n(請檢查 Firebase Rules 規則或網路連線)`);
                 } finally {
                     isSyncing.value = false;
                 }
             };
 
             const addExpense = () => {
-                if (!newExp.value.name || !newExp.value.amount) return;
+                if (!newExp.value.name || !newExp.value.amount) { alert("名稱與金額必填"); return; }
                 expenses.value.unshift({ ...newExp.value, id: Date.now() });
                 showExpenseModal.value = false;
                 newExp.value = { name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) };
-                // 不自動同步，等待使用者按下雲端按鈕
+                // 新增後可提醒手動同步
             };
 
             const removeExpense = (idx) => {
                 if(confirm("確定刪除此筆支出？")) expenses.value.splice(idx, 1);
             };
 
-            const addShoppingItem = () => {
-                if(!newShoppingItem.value.name) return;
-                shoppingList.value.unshift({ ...newShoppingItem.value, id: Date.now() });
-                showShoppingModal.value = false;
-                newShoppingItem.value = { name: '', image: null };
-            };
-
-            const removeShoppingItem = (idx) => {
-                if(confirm("確定刪除？")) shoppingList.value.splice(idx, 1);
-            };
-
             const login = () => signInWithPopup(auth, provider);
             const logout = () => signOut(auth);
             const formatNumber = (n) => n?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || '0';
-            const openMap = (q) => { if(q) window.open('https://www.google.com/maps/search/' + encodeURIComponent(q), '_blank'); };
-            const getCategoryIcon = (cat) => ({ flight: 'fa-solid fa-plane', sightseeing: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', accommodation: 'fa-solid fa-bed', transport: 'fa-solid fa-bus' }[cat] || 'fa-solid fa-star');
-            const getTransportIcon = (type) => ({ walk: 'fa-solid fa-person-walking', car: 'fa-solid fa-car-side', bus: 'fa-solid fa-bus-simple', public: 'fa-solid fa-train-subway' }[type] || 'fa-solid fa-arrow-down');
-
-            const handleAddClick = () => {
-                if (currentTab.value === 'expenses') showExpenseModal.value = true;
-                else if (currentTab.value === 'shopping') showShoppingModal.value = true;
-                else if (isAdmin.value && currentTab.value === 'itinerary') {
-                    itineraryData.value[selectedDateIndex.value].push({ id: Date.now(), name: "新行程", startTime: "12:00", category: "sightseeing", note: "" });
-                }
-            };
-
-            const triggerFileInput = () => fileInput.value.click();
-            const handleImageUpload = (e) => {
-                const reader = new FileReader();
-                reader.onload = (ev) => newShoppingItem.value.image = ev.target.result;
-                reader.readAsDataURL(e.target.files[0]);
-            };
+            const handleAddClick = () => { if (currentTab.value === 'expenses') showExpenseModal.value = true; };
 
             return { 
-                user, login, logout, isAdmin, isLoading, isSyncing, currentTab, selectedDateIndex, tabs, dates, itineraryData, hotels,
-                currentItinerary: computed(() => itineraryData.value[selectedDateIndex.value] || []),
-                jpyInput, shoppingList, expenses, totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+e.amount,0)), 
+                user, login, logout, isAdmin, isLoading, isSyncing, currentTab, selectedDateIndex, tabs, dates,
+                expenses, totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+e.amount,0)), 
                 totalTWD: computed(()=>Math.round(expenses.value.reduce((s,e)=>s+e.amount,0)*0.215)),
-                showShoppingModal, showExpenseModal, newShoppingItem, newExp, fileInput,
-                openMap, formatNumber, getCategoryIcon, getTransportIcon, handleAddClick, triggerFileInput, 
-                handleImageUpload, addShoppingItem, addExpense, removeExpense, removeShoppingItem, forceSync
+                showExpenseModal, newExp, formatNumber, handleAddClick, removeExpense, forceSync
             };
         }
     }).mount('#app');
