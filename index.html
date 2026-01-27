@@ -19,27 +19,25 @@
         .header-image { width: 100%; height: 250px; object-fit: cover; }
         .tab-button { width: 42px; height: 42px; border-radius: 50%; background: white; color: #FFB7C5; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(216, 27, 96, 0.15); transition: 0.3s; }
         .tab-button.active { background-color: #D81B60; color: white; transform: scale(1.1); }
-        .travel-path { margin-left: 28px; border-left: 2px dashed #FFD1DC; padding: 10px 0 10px 20px; position: relative; }
-        .travel-icon-box { position: absolute; left: -11px; top: 50%; transform: translateY(-50%); background: white; padding: 2px 0; }
         .sync-btn { position: fixed; top: 16px; right: 16px; z-index: 300; width: 44px; height: 44px; background: #D81B60; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(216, 27, 96, 0.4); border: 2px solid white; }
     </style>
 </head>
 <body>
 
 <div id="app" v-cloak class="app-container">
-    <div v-if="!user" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-8 text-center">
-        <div class="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-sm">
-            <h2 class="text-3xl font-black text-sakura-rose mb-2 italic">Hokkaido 2026</h2>
-            <p class="text-slate-400 text-sm mb-10">登入以同步個人雲端存檔</p>
-            <button @click="login" class="flex items-center justify-center w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 shadow-sm">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 帳號登入
+    <div v-if="!user" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-8">
+        <div class="bg-white p-10 rounded-[40px] shadow-2xl text-center w-full max-w-sm">
+            <h2 class="text-3xl font-black text-sakura-rose mb-2 italic text-center w-full">Hokkaido 2026</h2>
+            <p class="text-slate-400 text-sm mb-10 text-center">登入後即可同步雲端行程與記帳</p>
+            <button @click="login" class="flex items-center justify-center w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 transition-all">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 登入
             </button>
         </div>
     </div>
 
     <div v-if="user && isLoading" class="fixed inset-0 bg-white z-[500] flex flex-col items-center justify-center">
         <div class="w-12 h-12 border-4 border-sakura-pink border-t-sakura-rose rounded-full animate-spin"></div>
-        <p class="mt-4 text-sakura-rose font-bold animate-pulse text-center">正在從 GitHub 與 Google 抓取資料...</p>
+        <p class="mt-4 text-sakura-rose font-bold animate-pulse">正在載入行程細節...</p>
     </div>
 
     <div v-if="user && !isLoading">
@@ -63,11 +61,17 @@
                 <div class="flex overflow-x-auto space-x-3 pb-4 sticky top-0 bg-white/90 backdrop-blur-md -mx-4 px-4 z-20">
                     <div v-for="(day, idx) in dates" :key="idx" @click="selectedDateIndex = idx" class="flex-shrink-0 w-[58px] h-[68px] rounded-xl flex flex-col items-center justify-center border-2 transition-all" :class="selectedDateIndex === idx ? 'bg-sakura-rose text-white border-sakura-rose shadow-md' : 'bg-white text-pink-300 border-pink-50'"><span class="text-sm font-bold uppercase">{{ day.weekday }}</span><span class="text-xs">{{ day.date }}</span></div>
                 </div>
+
                 <div v-for="(item, index) in currentItinerary" :key="item.id" class="bg-white rounded-3xl p-5 shadow-sm border border-pink-50 relative group mb-4">
                     <div class="flex items-start text-left">
                         <div class="mr-4 flex flex-col items-center min-w-[50px]"><div class="p-3 rounded-full bg-pink-50 text-sakura-rose shadow-inner"><i :class="getCategoryIcon(item.category)"></i></div><span class="text-[10px] font-bold text-slate-400 mt-2">{{ item.startTime }}</span></div>
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ item.name }}</h3>
+                            
+                            <div v-if="item.price" class="mt-1 text-[11px] text-blue-500 font-bold flex items-center">
+                                <i class="fa-solid fa-ticket mr-1.5"></i>費用：{{ item.price }}
+                            </div>
+                            
                             <div v-if="item.stayDuration" class="mt-1 text-[11px] text-sakura-rose font-bold">預計停留：{{ item.stayDuration }}</div>
                             <div v-if="item.note" class="mt-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100 relative text-xs text-slate-600 whitespace-pre-line leading-relaxed">
                                 <i class="fa-solid fa-highlighter text-yellow-400 mr-1.5"></i> 備註：{{ item.note }}
@@ -85,18 +89,18 @@
                 <div class="bg-gradient-to-br from-[#01579B] to-[#0097A7] rounded-3xl p-6 text-white shadow-xl">
                     <h3 class="font-bold text-lg mb-4 flex items-center"><i class="fa-solid fa-calculator mr-2"></i> 匯率換算 (0.215)</h3>
                     <div class="flex items-center justify-between space-x-3">
-                        <div class="flex-1"><label class="text-[10px] text-cyan-200 block mb-1">JPY (日幣)</label><input type="number" v-model="jpyInput" class="w-full bg-white/20 border border-white/30 rounded-xl px-3 py-2 text-white font-bold outline-none"></div>
+                        <div class="flex-1 text-left"><label class="text-[10px] text-cyan-200 block mb-1">JPY (日幣)</label><input type="number" v-model="jpyInput" class="w-full bg-white/20 border border-white/30 rounded-xl px-3 py-2 text-white font-bold outline-none"></div>
                         <i class="fa-solid fa-arrow-right-arrow-left text-cyan-300 mt-5"></i>
-                        <div class="flex-1"><label class="text-[10px] text-cyan-200 block mb-1">TWD (台幣)</label><div class="w-full bg-white/10 rounded-xl px-3 py-2 text-white font-bold">$ {{ (jpyInput * 0.215).toFixed(0) }}</div></div>
+                        <div class="flex-1 text-left"><label class="text-[10px] text-cyan-200 block mb-1">TWD (台幣)</label><div class="w-full bg-white/10 rounded-xl px-3 py-2 text-white font-bold">$ {{ (jpyInput * 0.215).toFixed(0) }}</div></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 card-shadow text-left">
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-50">
                     <h3 class="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2"><i class="fa-solid fa-hotel text-indigo-400 mr-2"></i> 住宿資訊</h3>
                     <ul class="space-y-6">
                         <li v-for="hotel in hotels" :key="hotel.name" class="border-b border-slate-50 last:border-0 pb-4 last:pb-0">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1"><span class="font-bold block text-slate-700 leading-tight text-lg">{{ hotel.name }}</span><span class="text-[10px] text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-1 font-bold">{{ hotel.date }}</span></div>
-                                <button @click="openMap(hotel.address)" class="w-9 h-9 rounded-full bg-nav-blue text-white flex items-center justify-center shadow-md active:scale-90 transition-all"><i class="fa-solid fa-location-arrow text-sm"></i></button>
+                                <button @click="openMap(hotel.address)" class="w-9 h-9 rounded-full bg-nav-blue text-white flex items-center justify-center shadow-md"><i class="fa-solid fa-location-arrow text-xs"></i></button>
                             </div>
                             <div class="text-[11px] text-slate-400 mt-2 space-y-1"><p><i class="fa-solid fa-phone mr-2"></i>{{ hotel.phone }}</p><p><i class="fa-solid fa-map-pin mr-2"></i>{{ hotel.address }}</p></div>
                         </li>
@@ -107,7 +111,7 @@
             <div v-if="currentTab === 'shopping'" class="animate-fade-in">
                 <div class="grid grid-cols-2 gap-4">
                     <div v-for="(item, idx) in shoppingList" :key="idx" class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 relative group">
-                        <div class="aspect-square bg-slate-50 rounded-xl mb-3 overflow-hidden border border-slate-100 relative flex items-center justify-center">
+                        <div class="aspect-square bg-slate-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
                             <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
                             <i v-else class="fa-solid fa-bag-shopping text-slate-200 text-3xl"></i>
                             <button @click="removeShoppingItem(idx)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] shadow-md"><i class="fa-solid fa-xmark"></i></button>
@@ -118,10 +122,10 @@
             </div>
 
             <div v-if="currentTab === 'expenses'" class="animate-fade-in text-center">
-                <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl text-center mb-6 relative">
-                    <p class="text-sm opacity-80 mb-2 font-bold">我的總花費 (JPY)</p>
+                <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl mb-6 relative">
+                    <p class="text-sm opacity-80 mb-2 font-bold">總花費 (JPY)</p>
                     <h2 class="text-5xl font-black">¥ {{ formatNumber(totalJPY) }}</h2>
-                    <p class="text-sm absolute bottom-4 right-8 opacity-80 font-bold italic">約 NT$ {{ formatNumber(totalTWD) }}</p>
+                    <p class="text-sm absolute bottom-4 right-8 opacity-80 italic">約 NT$ {{ formatNumber(totalTWD) }}</p>
                 </div>
                 <div v-for="(exp, idx) in expenses" :key="idx" class="flex items-center justify-between border-b border-slate-50 p-4 bg-white rounded-2xl mb-2 text-left shadow-sm">
                     <div class="flex items-center">
@@ -136,7 +140,17 @@
 
     <button v-if="user && !isLoading" @click="handleAddClick" class="fixed bottom-8 right-8 w-14 h-14 bg-[#FFD54F] rounded-full shadow-lg text-[#01579B] text-2xl flex items-center justify-center z-40 shadow-md transition-all active:scale-90"><i class="fa-solid fa-plus"></i></button>
 
-    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl text-center"><h3 class="font-bold text-xl mb-6">記一筆開銷</h3><div class="space-y-4"><input v-model="newExp.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold text-center"><input v-model.number="newExp.amount" type="number" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold text-center" placeholder="金額 (￥)"><div class="grid grid-cols-2 gap-3"><select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold text-center"><option value="飲食">飲食</option><option value="交通">交通</option><option value="購物">購物</option></select><input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold text-center"></div></div><div class="flex space-x-3 mt-8"><button @click="showExpenseModal = false" class="flex-1 py-4 bg-[#EEF2F6] rounded-2xl">取消</button><button @click="addExpense" class="flex-1 py-4 bg-[#FFD54F] text-[#01579B] font-bold rounded-2xl shadow-lg">儲存</button></div></div></div>
+    <div v-if="showEditModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"><div class="bg-white rounded-[35px] w-full max-w-sm p-8 shadow-2xl max-h-[85vh] overflow-y-auto"><h3 class="font-bold text-xl mb-6 text-center text-slate-800 text-center">編輯行程</h3><div class="space-y-4">
+        <select v-model="editingItem.category" class="w-full bg-slate-50 rounded-xl p-3 text-sm outline-none border-none text-center"><option value="sightseeing">景點</option><option value="flight">航班</option><option value="food">飲食</option><option value="accommodation">住宿</option><option value="transport">交通</option></select>
+        <input v-model="editingItem.name" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold" placeholder="景點名稱">
+        <input v-model="editingItem.address" type="text" placeholder="導航地址" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none text-xs">
+        <div class="flex space-x-3"><input v-model="editingItem.startTime" type="text" class="w-1/2 bg-slate-50 rounded-xl p-4 text-sm outline-none border-none text-center" placeholder="開始時間"><select v-model="editingItem.transportType" class="w-1/2 bg-slate-50 rounded-xl p-4 text-sm outline-none border-none text-center"><option value="walk">步行</option><option value="car">自駕</option><option value="bus">巴士</option><option value="public">公共運輸</option></select></div>
+        <input v-model="editingItem.price" type="text" placeholder="費用標註 (例: ¥2,500)" class="w-full bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm outline-none font-bold text-center">
+        <input v-model="editingItem.stayDuration" type="text" placeholder="停留時間" class="w-full bg-white border border-pink-100 rounded-xl p-4 text-sm outline-none font-bold text-center">
+        <textarea v-model="editingItem.note" rows="5" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none border-none text-xs font-bold text-left" placeholder="詳細備註"></textarea>
+    </div><div class="flex space-x-3 mt-8"><button @click="showEditModal = false" class="flex-1 py-4 bg-[#EEF2F6] rounded-2xl text-sm">取消</button><button @click="saveItem" class="flex-1 py-4 bg-sakura-rose text-white font-bold rounded-2xl text-sm shadow-lg text-center">儲存修改</button></div></div></div>
+
+    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl text-center"><h3 class="font-bold text-xl mb-6">記一筆開銷</h3><div class="space-y-4"><input v-model="newExp.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold text-center"><input v-model.number="newExp.amount" type="number" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm outline-none font-bold text-center" placeholder="金額 (￥)"><div class="grid grid-cols-2 gap-3"><select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold text-center"><option value="飲食">飲食</option><option value="交通">交通</option><option value="購物">購物</option></select><input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 text-sm outline-none border-none font-bold text-center"></div></div><div class="flex space-x-3 mt-8"><button @click="showExpenseModal = false" class="flex-1 py-4 bg-[#EEF2F6] rounded-2xl text-center">取消</button><button @click="addExpense" class="flex-1 py-4 bg-[#FFD54F] text-[#01579B] font-bold rounded-2xl shadow-lg text-center">儲存</button></div></div></div>
 </div>
 
 <script type="module">
@@ -179,22 +193,21 @@
             const dates = ref([{ date: '5/6', weekday: 'WED' }, { date: '5/7', weekday: 'THU' }, { date: '5/8', weekday: 'FRI' }, { date: '5/9', weekday: 'SAT' }, { date: '5/10', weekday: 'SUN' }, { date: '5/11', weekday: 'MON' }, { date: '5/12', weekday: 'TUE' }]);
             const tabs = [{ id: 'itinerary', icon: 'fa-solid fa-map-location-dot' }, { id: 'info', icon: 'fa-solid fa-circle-info' }, { id: 'shopping', icon: 'fa-solid fa-basket-shopping' }, { id: 'expenses', icon: 'fa-solid fa-coins' }];
             
+            const showEditModal = ref(false);
             const showExpenseModal = ref(false);
+            const editingItem = ref({});
+            const editingIndex = ref(null);
             const newExp = ref({ name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) });
 
             const login = () => signInWithPopup(fbAuth, fbProvider);
             const logout = () => signOut(fbAuth);
 
             onMounted(() => {
-                // 🚀 第一階段：從 Gist 抓取行程 (不受 Firebase 額度限制)
-                fetch(GIST_URL + '?t=' + Date.now())
-                    .then(r => r.json())
-                    .then(data => {
-                        itineraryData.value = data.itineraryData;
-                        hotels.value = data.hotels;
-                    });
+                fetch(GIST_URL + '?t=' + Date.now()).then(r => r.json()).then(data => {
+                    itineraryData.value = data.itineraryData || [];
+                    hotels.value = data.hotels || [];
+                });
 
-                // 🚀 第二階段：Firebase 登入驗證
                 onAuthStateChanged(fbAuth, async (u) => {
                     if (u) {
                         user.value = u;
@@ -224,7 +237,7 @@
                     ]);
                     alert("✅ 雲端備份成功！");
                 } catch (e) {
-                    alert("❌ 同步失敗：額度已滿，請等明天下午 4 點後重試。");
+                    alert("❌ 同步失敗：額度可能已滿，請等明天重試。");
                 } finally { isSyncing.value = false; }
             };
 
@@ -234,18 +247,22 @@
                 newExp.value = { name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) };
             };
 
+            const openEditModal = (item, index) => { editingItem.value = JSON.parse(JSON.stringify(item)); editingIndex.value = index; showEditModal.value = true; };
+            const saveItem = () => { itineraryData.value[selectedDateIndex.value][editingIndex.value] = editingItem.value; showEditModal.value = false; };
+            
             return { 
                 user, login, logout, isAdmin, isLoading, isSyncing, currentTab, selectedDateIndex, tabs, dates, itineraryData, hotels,
                 currentItinerary: computed(() => itineraryData.value[selectedDateIndex.value] || []),
-                jpyInput, shoppingList, expenses, totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+(e.amount||0),0)), 
-                totalTWD: computed(()=>Math.round(expenses.value.reduce((s,e)=>s+(e.amount||0),0)*0.215)),
-                showExpenseModal, newExp, formatNumber: (n) => n?.toLocaleString() || '0', 
+                jpyInput, shoppingList, expenses, totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)), 
+                totalTWD: computed(()=>Math.round(expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)*0.215)),
+                showExpenseModal, showEditModal, editingItem, newExp, formatNumber: (n) => n?.toLocaleString() || '0', 
                 getCategoryIcon: (cat) => ({ sightseeing: 'fa-solid fa-camera', flight: 'fa-solid fa-plane', food: 'fa-solid fa-utensils', accommodation: 'fa-solid fa-bed', transport: 'fa-solid fa-bus' }[cat] || 'fa-solid fa-star'),
                 getTransportIcon: (t) => ({ walk: 'fa-solid fa-person-walking', car: 'fa-solid fa-car-side', bus: 'fa-solid fa-bus-simple', public: 'fa-solid fa-train-subway' }[t] || 'fa-solid fa-arrow-down'),
                 forceSync, addExpense, removeExpense: (idx) => expenses.value.splice(idx,1),
                 removeShoppingItem: (idx) => shoppingList.value.splice(idx,1),
                 exportGistJson: () => navigator.clipboard.writeText(JSON.stringify({ itineraryData: itineraryData.value, hotels: hotels.value }, null, 2)).then(() => alert("代碼已複製！")),
-                handleAddClick: () => { if (currentTab.value === 'expenses') showExpenseModal.value = true; }
+                handleAddClick: () => { if (currentTab.value === 'expenses') showExpenseModal.value = true; },
+                openEditModal, saveItem, openMap: (q) => window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q), '_blank')
             };
         }
     }).mount('#app');
