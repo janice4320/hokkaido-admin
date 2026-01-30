@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hokkaido Sakura 2026 - Light Master</title>
+    <title>Hokkaido Sakura 2026 - Master Light</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -24,8 +24,7 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .nav-btn { width: 34px; height: 34px; background-color: #4FC3F7; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(79, 195, 247, 0.3); flex-shrink: 0; cursor: pointer; }
         .sync-btn { position: fixed; top: 16px; right: 16px; z-index: 300; width: 44px; height: 44px; background: #00C853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4); border: 2px solid white; cursor: pointer; }
-        .spot-image { width: 100%; height: 180px; object-fit: cover; border-radius: 20px; margin-bottom: 12px; }
-        .description-box { font-size: 11px; line-height: 1.6; color: #64748b; margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px; }
+        .spot-image { width: 100%; height: 180px; object-fit: cover; border-radius: 20px; margin-bottom: 12px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -33,11 +32,11 @@
 <div id="app" v-cloak class="app-container">
     <div v-if="!user" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-6 text-center">
         <div class="bg-white p-6 rounded-[40px] shadow-2xl w-full max-w-sm">
-            <img src="7672.png" class="w-full rounded-[30px] mb-6 shadow-sm aspect-square object-cover">
+            <img src="7672.png" class="w-full rounded-[30px] mb-6 shadow-sm aspect-square object-cover" onerror="this.src='https://via.placeholder.com/300?text=Sakura+2026'">
             <h2 class="text-3xl font-black text-sakura-rose mb-1 italic">Hokkaido 2026</h2>
-            <p class="text-slate-400 text-sm mb-8 font-bold italic italic">Light Master Edition</p>
+            <p class="text-slate-400 text-sm mb-8 font-bold italic">Light Master Edition</p>
             <button @click="login" class="flex items-center justify-center w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 transition-all shadow-sm">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 登入
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 帳號登入
             </button>
         </div>
     </div>
@@ -52,7 +51,7 @@
                 <button @click="logout" class="bg-black/30 text-white p-2 px-4 rounded-full text-[10px] backdrop-blur-md cursor-pointer">登出</button>
                 <button v-if="isAdmin" @click="exportGistJson" class="bg-sakura-rose text-white p-2 px-4 rounded-full text-[10px] shadow-lg animate-bounce cursor-pointer"><i class="fa-solid fa-crown mr-1"></i> 匯出 Gist</button>
             </div>
-            <img src="1769184532571.png" class="header-image">
+            <img src="1769184532571.png" class="header-image" onerror="this.src='https://via.placeholder.com/800x400?text=Hokkaido+Spring'">
             <div class="absolute bottom-6 right-4 z-30 flex gap-2">
                 <button v-for="t in tabs" :key="t.id" @click="currentTab = t.id" :class="{'active': currentTab === t.id}" class="tab-button shadow-md"><i :class="t.icon"></i></button>
             </div>
@@ -69,4 +68,254 @@
                     <div class="flex items-start text-left">
                         <div class="mr-4 flex flex-col items-center min-w-[50px]"><div class="p-3 rounded-full bg-pink-50 text-sakura-rose shadow-inner"><i :class="getCategoryIcon(item.category)"></i></div><span class="text-[10px] font-bold text-slate-300 mt-2">{{ item.startTime }}</span></div>
                         <div class="flex-1">
-                            <h
+                            <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ item.name }}</h3>
+                            <div v-if="item.price" class="mt-1 text-[11px] text-blue-500 font-bold flex items-center"><i class="fa-solid fa-ticket mr-1.5"></i>費用標註：{{ item.price }}</div>
+                            <div v-if="item.note" class="mt-2 text-[11px] text-sakura-rose font-bold"><i class="fa-solid fa-pencil mr-1"></i>備註：{{ item.note }}</div>
+                            <div v-if="item.description" class="mt-2 text-[11px] text-slate-500 border-t pt-2">{{ item.description }}</div>
+                        </div>
+                        <div class="flex flex-col items-center space-y-2 ml-2">
+                            <button @click="openMap(item.address || item.name)" class="nav-btn"><i class="fa-solid fa-location-arrow text-xs"></i></button>
+                            <div v-if="isAdmin" class="flex flex-col space-y-1">
+                                <button @click="moveItem(index, -1)" v-show="index > 0" class="w-7 h-7 bg-slate-50 text-slate-300 rounded-full text-[10px]"><i class="fa-solid fa-arrow-up"></i></button>
+                                <button @click="moveItem(index, 1)" v-show="index < currentItinerary.length - 1" class="w-7 h-7 bg-slate-50 text-slate-300 rounded-full text-[10px]"><i class="fa-solid fa-arrow-down"></i></button>
+                                <button @click="openEditModal(item, index)" class="w-7 h-7 bg-slate-100 text-slate-400 rounded-full text-[10px]"><i class="fa-solid fa-pencil"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'info'" class="space-y-6 animate-fade-in text-left">
+                <div class="bg-gradient-to-br from-[#01579B] to-[#0097A7] rounded-[32px] p-6 text-white shadow-xl">
+                    <h3 class="font-bold text-lg mb-4 flex items-center"><i class="fa-solid fa-calculator mr-2"></i> 匯率換算 (0.215)</h3>
+                    <div class="flex items-center space-x-3">
+                        <input type="number" v-model="jpyInput" class="flex-1 bg-white/20 border-none rounded-xl px-3 py-2 text-white font-bold outline-none">
+                        <i class="fa-solid fa-arrow-right-long text-cyan-300"></i>
+                        <div class="flex-1 bg-white/10 rounded-xl px-3 py-2 text-white font-bold">$ {{ (jpyInput * 0.215).toFixed(0) }}</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[32px] p-6 shadow-sm border border-slate-50">
+                    <h3 class="font-bold text-slate-800 mb-5 border-b border-slate-50 pb-3 flex items-center"><i class="fa-solid fa-hotel text-indigo-400 mr-2"></i> 住宿資訊</h3>
+                    <ul class="space-y-8">
+                        <li v-for="hotel in hotels" :key="hotel.name" class="flex justify-between items-start pb-4 border-b border-slate-50 last:border-0">
+                            <div class="flex-1 text-left">
+                                <span class="font-bold block text-slate-700 text-lg">{{ hotel.name }}</span>
+                                <span class="text-[10px] text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-2 font-bold">{{ hotel.date }}</span>
+                                <div class="text-[11px] text-slate-400 mt-3 space-y-1.5">
+                                    <p><i class="fa-solid fa-phone w-5"></i>{{ hotel.phone }}</p>
+                                    <p><i class="fa-solid fa-map-pin w-5"></i>{{ hotel.address }}</p>
+                                </div>
+                            </div>
+                            <button @click="openMap(hotel.address)" class="nav-btn"><i class="fa-solid fa-location-arrow text-xs"></i></button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'shopping'" class="grid grid-cols-2 gap-4 animate-fade-in">
+                <div v-for="(item, idx) in shoppingList" :key="idx" class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 relative group">
+                    <div class="aspect-square bg-slate-50 rounded-xl mb-3 overflow-hidden flex items-center justify-center relative">
+                        <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
+                        <i v-else class="fa-solid fa-bag-shopping text-slate-200 text-3xl"></i>
+                        <button @click="removeShoppingItem(idx)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <p class="font-bold text-sm text-slate-800 truncate px-1 text-center font-bold">{{ item.name }}</p>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'expenses'" class="animate-fade-in text-center">
+                <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl mb-6 relative">
+                    <p class="text-sm opacity-80 mb-2 font-bold uppercase italic italic">Total Expenses</p>
+                    <h2 class="text-5xl font-black">¥ {{ formatNumber(totalJPY) }}</h2>
+                    <p class="text-sm absolute bottom-4 right-8 opacity-80 italic font-bold">約 NT$ {{ formatNumber(totalTWD) }}</p>
+                </div>
+                <div v-for="(exp, idx) in expenses" :key="exp.id" class="flex items-center justify-between p-4 bg-white rounded-2xl mb-2 text-left shadow-sm border-b">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div>
+                        <div><p class="font-bold text-slate-700 text-sm leading-tight">{{ exp.name }}</p><p class="text-[10px] text-slate-400 mt-0.5 font-bold">{{ exp.date }}</p></div>
+                    </div>
+                    <div class="flex items-center"><p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p><button @click="removeExpense(idx)" class="ml-3 text-red-100 hover:text-red-400 cursor-pointer"><i class="fa-solid fa-xmark"></i></button></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div v-if="showEditModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-xl mb-6 text-slate-800 text-center font-bold">編輯行程</h3>
+            <div class="space-y-3">
+                <select v-model="editingItem.category" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold outline-none text-center appearance-none">
+                    <option value="flight">航班</option><option value="sightseeing">景點</option><option value="food">飲食</option><option value="accommodation">住宿</option><option value="transport">交通</option>
+                </select>
+                <input v-model="editingItem.name" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="名稱">
+                
+                <div class="border-2 border-dashed border-slate-100 rounded-xl p-4 text-center cursor-pointer relative" @click="triggerItineraryFileInput">
+                    <input type="file" ref="itineraryFileInput" class="hidden" @change="handleItineraryImageUpload">
+                    <div v-if="isProcessingImage" class="absolute inset-0 bg-white/80 flex items-center justify-center z-10"><i class="fa-solid fa-spinner animate-spin text-sakura-rose"></i></div>
+                    <img v-if="editingItem.image" :src="editingItem.image" class="w-full h-32 object-cover rounded-lg mb-2">
+                    <p class="text-[10px] text-slate-400 font-bold"><i class="fa-solid fa-compress mr-1"></i> 選取並壓縮景點照片</p>
+                </div>
+
+                <input v-model="editingItem.address" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="地址">
+                <div class="grid grid-cols-2 gap-3">
+                    <input v-model="editingItem.startTime" type="text" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="時間 (06:00)">
+                    <select v-model="editingItem.transportType" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center appearance-none cursor-pointer">
+                        <option value="plane">飛機</option><option value="bus">巴士</option><option value="train">火車</option><option value="walk">步行</option>
+                    </select>
+                </div>
+                <textarea v-model="editingItem.description" rows="3" class="w-full bg-blue-50/30 rounded-xl p-4 text-sm outline-none text-left" placeholder="景點介紹..."></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <input v-model="editingItem.travelTime" type="text" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="車程">
+                    <input v-model="editingItem.openTime" type="text" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="營業時間">
+                </div>
+                <input v-model="editingItem.price" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="費用">
+                <textarea v-model="editingItem.note" rows="2" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none text-left" placeholder="備註..."></textarea>
+                <button @click="deleteItem" class="w-full py-3 bg-red-50 text-red-400 rounded-xl text-xs font-bold">永久刪除</button>
+            </div>
+            <div class="flex space-x-3 mt-8"><button @click="showEditModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold">取消</button><button @click="saveItem" class="flex-1 py-4 bg-sakura-rose text-white rounded-2xl font-bold shadow-lg">儲存</button></div>
+        </div>
+    </div>
+
+    <button v-if="user && !isLoading" @click="handleAddClick" class="fixed bottom-8 right-8 w-14 h-14 bg-[#FFD54F] rounded-full shadow-lg text-[#01579B] text-2xl flex items-center justify-center z-40 active:scale-90 cursor-pointer border-2 border-white"><i class="fa-solid fa-plus"></i></button>
+
+    <div v-if="showShoppingModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3 class="font-bold text-xl mb-6">新增購物</h3><div class="space-y-4"><input v-model="newShoppingItem.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><div @click="triggerFileInput" class="border-2 border-dashed border-slate-100 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer relative"><div v-if="isProcessingImage" class="absolute inset-0 bg-white/80 flex items-center justify-center"><i class="fa-solid fa-spinner animate-spin text-nav-blue"></i></div><input type="file" ref="fileInput" class="hidden" @change="handleImageUpload"><img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="w-full h-32 object-contain"><i v-else class="fa-solid fa-camera text-4xl text-slate-300"></i></div></div><div class="flex space-x-3 mt-8"><button @click="showShoppingModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold cursor-pointer">取消</button><button @click="addShoppingItem" class="flex-1 py-4 bg-nav-blue text-white font-bold rounded-2xl shadow-lg cursor-pointer">新增</button></div></div></div>
+    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3 class="font-bold text-xl mb-6 font-bold text-slate-800">記一筆開銷</h3><div class="space-y-4"><input v-model="newExp.name" type="text" placeholder="項目" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><input v-model.number="newExp.amount" type="number" placeholder="JPY" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><div class="grid grid-cols-2 gap-3"><select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center cursor-pointer"><option value="飲食">飲食</option><option value="交通">交通</option><option value="購物">購物</option></select><input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 text-sm font-bold"></div></div><div class="flex space-x-3 mt-8"><button @click="showExpenseModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl text-center font-bold cursor-pointer">取消</button><button @click="addExpense" class="flex-1 py-4 bg-sakura-rose text-white font-bold rounded-2xl text-center shadow-lg cursor-pointer">儲存</button></div></div></div>
+</div>
+
+<script type="module">
+    const supabaseUrl = 'https://snikmtptzjnlqgpvobph.supabase.co'; 
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuaWttdHB0empubHFncHZvYnBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjY2OTEsImV4cCI6MjA4NTA0MjY5MX0.BGHztxKN7nlU9nIeEohiVDThfjXvZGEMy6xmeUwOrWE'; 
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const SITE_URL = 'https://janice4320.github.io/hokkaido-admin/';
+            const ADMIN_LIST = ["99aca807-d86a-4566-bcaf-9129834fb965", "QcLYJTmR9mVCfw3U36o2eU9K3Ey2"];
+
+            const user = ref(null);
+            const isLoading = ref(true);
+            const isSyncing = ref(false);
+            const isProcessingImage = ref(false);
+            const currentTab = ref('itinerary');
+            const selectedDateIndex = ref(0);
+            const itineraryData = ref(Array.from({ length: 7 }, () => []));
+            const hotels = ref([]);
+            const shoppingList = ref([]);
+            const expenses = ref([]);
+            const jpyInput = ref(50000);
+            const dates = ref([{ date: '5/6', weekday: 'WED' }, { date: '5/7', weekday: 'THU' }, { date: '5/8', weekday: 'FRI' }, { date: '5/9', weekday: 'SAT' }, { date: '5/10', weekday: 'SUN' }, { date: '5/11', weekday: 'MON' }, { date: '5/12', weekday: 'TUE' }]);
+            const tabs = [{ id: 'itinerary', icon: 'fa-solid fa-map-location-dot' }, { id: 'info', icon: 'fa-solid fa-circle-info' }, { id: 'shopping', icon: 'fa-solid fa-basket-shopping' }, { id: 'expenses', icon: 'fa-solid fa-coins' }];
+            
+            const showEditModal = ref(false);
+            const showShoppingModal = ref(false);
+            const showExpenseModal = ref(false);
+            const editingItem = ref({});
+            const editingIndex = ref(null);
+            const newShoppingItem = ref({ name: '', image: null });
+            const newExp = ref({ name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) });
+            const fileInput = ref(null);
+            const itineraryFileInput = ref(null);
+
+            const compressImage = (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width, height = img.height;
+                            const max_size = 800;
+                            if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+                            else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                            canvas.width = width; canvas.height = height;
+                            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        };
+                    };
+                });
+            };
+
+            onMounted(async () => {
+                try {
+                    const res = await fetch('https://gist.githubusercontent.com/janice4320/e9bd971c88bb5e9495c1fb623ef8a123/raw/hokkaido_map.json?t=' + Date.now());
+                    const data = await res.json();
+                    itineraryData.value = data.itineraryData;
+                    hotels.value = data.hotels;
+                } catch (e) { console.error("Gist Load Failed"); }
+
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) { user.value = session.user; await loadCloudData(session.user.id); }
+                
+                supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (session) { user.value = session.user; await loadCloudData(session.user.id); }
+                    else { user.value = null; }
+                    isLoading.value = false;
+                });
+                if(!session) isLoading.value = false;
+            });
+
+            const loadCloudData = async (userId) => {
+                const { data } = await supabase.from('user_data').select('*').eq('id', userId).single();
+                if (data) { expenses.value = data.expenses || []; shoppingList.value = data.shopping || []; }
+            };
+
+            return { 
+                user, isAdmin: computed(() => user.value && ADMIN_LIST.includes(user.value.id)), isLoading, isSyncing, isProcessingImage, currentTab, selectedDateIndex, tabs, dates, itineraryData, hotels,
+                currentItinerary: computed(() => itineraryData.value[selectedDateIndex.value] || []),
+                jpyInput, shoppingList, expenses, totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)), 
+                totalTWD: computed(()=>Math.round(expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)*0.215)),
+                showShoppingModal, showExpenseModal, showEditModal, editingItem, newShoppingItem, newExp, fileInput, itineraryFileInput,
+                login: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL } }),
+                logout: async () => { await supabase.auth.signOut(); user.value = null; },
+                forceSync: async () => {
+                    if (!user.value || isSyncing.value) return;
+                    isSyncing.value = true;
+                    try {
+                        await supabase.from('user_data').upsert({ id: user.value.id, expenses: JSON.parse(JSON.stringify(expenses.value)), shopping: JSON.parse(JSON.stringify(shoppingList.value)), last_update: new Date() });
+                        alert("✅ 備份成功");
+                    } catch (e) { alert("❌ 同步失敗"); } finally { isSyncing.value = false; }
+                },
+                handleAddClick: () => {
+                    if (currentTab.value === 'itinerary' && isAdmin.value) { 
+                        const newItem = { id: Date.now(), name: "", startTime: "12:00", category: "sightseeing", transportType: "walk", description: "", image: "" };
+                        itineraryData.value[selectedDateIndex.value].push(newItem);
+                        editingItem.value = JSON.parse(JSON.stringify(newItem));
+                        editingIndex.value = itineraryData.value[selectedDateIndex.value].length - 1;
+                        showEditModal.value = true;
+                    }
+                    else if (currentTab.value === 'shopping') showShoppingModal.value = true;
+                    else if (currentTab.value === 'expenses') showExpenseModal.value = true;
+                },
+                handleImageUpload: async (e) => { 
+                    isProcessingImage.value = true;
+                    newShoppingItem.value.image = await compressImage(e.target.files[0]);
+                    isProcessingImage.value = false;
+                },
+                handleItineraryImageUpload: async (e) => {
+                    isProcessingImage.value = true;
+                    editingItem.value.image = await compressImage(e.target.files[0]);
+                    isProcessingImage.value = false;
+                },
+                moveItem: (idx, dir) => { const list = itineraryData.value[selectedDateIndex.value]; if (idx+dir >= 0 && idx+dir < list.length) { [list[idx], list[idx+dir]] = [list[idx+dir], list[idx]]; } },
+                openEditModal: (item, index) => { editingItem.value = JSON.parse(JSON.stringify(item)); editingIndex.value = index; showEditModal.value = true; },
+                saveItem: () => { itineraryData.value[selectedDateIndex.value][editingIndex.value] = editingItem.value; showEditModal.value = false; },
+                deleteItem: () => { if(confirm('確定刪除？')) { itineraryData.value[selectedDateIndex.value].splice(editingIndex.value, 1); showEditModal.value = false; } },
+                triggerFileInput: () => fileInput.value.click(),
+                triggerItineraryFileInput: () => itineraryFileInput.value.click(),
+                addExpense: () => { expenses.value.unshift({ ...newExp.value, id: Date.now() }); showExpenseModal.value = false; newExp.value = { name: '', amount: null, category: '飲食', date: new Date().toISOString().slice(0,10) }; },
+                addShoppingItem: () => { shoppingList.value.unshift({ ...newShoppingItem.value, id: Date.now() }); showShoppingModal.value = false; newShoppingItem.value = { name: '', image: null }; },
+                removeExpense: (idx) => expenses.value.splice(idx,1), removeShoppingItem: (idx) => shoppingList.value.splice(idx,1),
+                exportGistJson: () => navigator.clipboard.writeText(JSON.stringify({ itineraryData: itineraryData.value, hotels: hotels.value }, null, 2)).then(() => alert("代碼已複製")),
+                formatNumber: (n) => n?.toLocaleString() || '0', 
+                getCategoryIcon: (cat) => ({ sightseeing: 'fa-solid fa-camera', flight: 'fa-solid fa-plane', food: 'fa-solid fa-utensils', accommodation: 'fa-solid fa-bed', transport: 'fa-solid fa-bus' }[cat] || 'fa-solid fa-star'),
+                openMap: (q) => window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q), '_blank')
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
