@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hokkaido Sakura 2026 - Zoom Edition</title>
+    <title>Hokkaido Sakura 2026 - Hybrid Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -24,35 +24,41 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .nav-btn { width: 34px; height: 34px; background-color: #4FC3F7; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(79, 195, 247, 0.3); flex-shrink: 0; cursor: pointer; }
         .sync-btn { position: fixed; top: 16px; right: 16px; z-index: 300; width: 44px; height: 44px; background: #00C853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4); border: 2px solid white; cursor: pointer; }
-        
-        /* 🚀 彈出照片檢視器 - 支援手指縮放 */
         .photo-viewer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
         .full-photo { max-width: 100%; max-height: 90vh; transition: transform 0.1s ease-out; will-change: transform; border-radius: 10px; }
-        .zoom-hint { position: absolute; bottom: 30px; color: white; font-size: 10px; background: rgba(255,255,255,0.2); padding: 5px 15px; rounded-full: 999px; backdrop-blur-md; pointer-events: none; }
+        .zoom-hint { position: absolute; bottom: 30px; color: white; font-size: 10px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 99px; backdrop-blur-md; pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div id="app" v-cloak class="app-container">
-    <div v-if="!user" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-6 text-center">
+    <div v-if="!user && !isGuest" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-6 text-center">
         <div class="bg-white p-6 rounded-[40px] shadow-2xl w-full max-w-sm">
             <img src="7672.png" class="w-full rounded-[30px] mb-6 shadow-sm aspect-square object-cover" onerror="this.src='https://via.placeholder.com/300?text=Sakura+2026'">
             <h2 class="text-3xl font-black text-sakura-rose mb-1 italic">Hokkaido 2026</h2>
-            <p class="text-slate-400 text-sm mb-8 font-bold italic">Smart Zoom Edition</p>
-            <button @click="login" class="flex items-center justify-center w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 transition-all shadow-sm">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 帳號登入
+            <p class="text-slate-400 text-[10px] mb-8 font-bold italic">請選擇進入模式</p>
+            
+            <button @click="login" class="flex items-center justify-center w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 transition-all shadow-sm mb-4">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 雲端同步模式
             </button>
+
+            <button @click="isGuest = true" class="flex items-center justify-center w-full bg-slate-50 py-4 rounded-2xl font-bold text-slate-500 active:scale-95 transition-all border border-slate-100">
+                <i class="fa-solid fa-eye mr-3"></i> 直接查看行程 (訪客)
+            </button>
+            <p class="mt-4 text-[9px] text-slate-300 italic">* 訪客模式不具備記帳與同步功能</p>
         </div>
     </div>
 
-    <div v-if="user && !isLoading">
-        <button v-if="['shopping', 'expenses'].includes(currentTab)" @click="forceSync" class="sync-btn" :class="{'animate-spin': isSyncing}">
+    <div v-if="(user || isGuest) && !isLoading">
+        <button v-if="user && ['shopping', 'expenses'].includes(currentTab)" @click="forceSync" class="sync-btn" :class="{'animate-spin': isSyncing}">
             <i class="fa-solid fa-cloud-arrow-up"></i>
         </button>
 
         <div class="header-bg relative">
             <div class="absolute top-4 left-4 z-[100] flex space-x-2">
-                <button @click="logout" class="bg-black/30 text-white p-2 px-4 rounded-full text-[10px] backdrop-blur-md cursor-pointer">登出</button>
+                <button v-if="user" @click="logout" class="bg-black/30 text-white p-2 px-4 rounded-full text-[10px] backdrop-blur-md cursor-pointer">登出</button>
+                <button v-else @click="isGuest = false" class="bg-sakura-rose text-white p-2 px-4 rounded-full text-[10px] shadow-lg cursor-pointer">登入帳號</button>
+                
                 <button v-if="isAdmin" @click="exportGistJson" class="bg-sakura-rose text-white p-2 px-4 rounded-full text-[10px] shadow-lg animate-bounce cursor-pointer"><i class="fa-solid fa-crown mr-1"></i> 匯出 Gist</button>
             </div>
             <img src="1769184532571.png" class="header-image">
@@ -103,8 +109,8 @@
                 <div class="bg-white rounded-[32px] p-6 shadow-sm border border-slate-50 text-left">
                     <h3 class="font-bold text-slate-800 mb-5 border-b border-slate-50 pb-3 flex items-center"><i class="fa-solid fa-hotel text-indigo-400 mr-2"></i> 住宿資訊</h3>
                     <ul class="space-y-8">
-                        <li v-for="hotel in hotels" :key="hotel.name" class="flex justify-between items-start">
-                            <div class="flex-1">
+                        <li v-for="hotel in hotels" :key="hotel.name" class="flex justify-between items-start border-b border-slate-50 last:border-0 pb-4">
+                            <div class="flex-1 text-left text-left">
                                 <span class="font-bold block text-slate-700 text-lg leading-tight">{{ hotel.name }}</span>
                                 <span class="text-[10px] text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-2 font-bold">{{ hotel.date }}</span>
                                 <div class="text-[11px] text-slate-400 mt-3 space-y-1.5"><p><i class="fa-solid fa-phone w-5"></i>{{ hotel.phone }}</p><p><i class="fa-solid fa-map-pin w-5"></i>{{ hotel.address }}</p></div>
@@ -120,61 +126,63 @@
                     <div class="aspect-square bg-slate-50 rounded-xl mb-3 overflow-hidden flex items-center justify-center relative shadow-inner" @click="viewPhoto(item.image)">
                         <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
                         <i v-else class="fa-solid fa-bag-shopping text-slate-200 text-3xl"></i>
-                        <button @click.stop="removeShoppingItem(idx)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        <button v-if="user" @click.stop="removeShoppingItem(idx)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <p class="font-bold text-sm text-slate-800 truncate px-1 text-center">{{ item.name }}</p>
+                </div>
+                <div v-if="shoppingList.length === 0" class="col-span-2 text-center py-20 text-slate-300 text-xs italic">
+                    {{ isGuest ? '訪客模式不顯示私人物品' : '點擊右下角 + 新增項目' }}
                 </div>
             </div>
 
             <div v-if="currentTab === 'expenses'" class="animate-fade-in text-center">
                 <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl mb-6 relative">
-                    <p class="text-sm opacity-80 mb-2 font-bold uppercase">Total Expenses</p>
+                    <p class="text-sm opacity-80 mb-2 font-bold uppercase italic italic">Total Expenses</p>
                     <h2 class="text-5xl font-black">¥ {{ formatNumber(totalJPY) }}</h2>
                     <p class="text-sm absolute bottom-4 right-8 opacity-80 italic font-bold">約 NT$ {{ formatNumber(totalTWD) }}</p>
                 </div>
                 <div v-for="(exp, idx) in expenses" :key="exp.id" class="flex items-center justify-between p-4 bg-white rounded-2xl mb-2 text-left shadow-sm border-b">
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div>
-                        <div><p class="font-bold text-slate-700 text-sm">{{ exp.name }}</p><p class="text-[10px] text-slate-400">{{ exp.date }}</p></div>
+                        <div><p class="font-bold text-slate-700 text-sm leading-tight text-left">{{ exp.name }}</p><p class="text-[10px] text-slate-400 mt-0.5 font-bold text-left">{{ exp.date }}</p></div>
                     </div>
-                    <div class="flex items-center"><p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p><button @click="removeExpense(idx)" class="ml-3 text-red-100 hover:text-red-400 cursor-pointer"><i class="fa-solid fa-xmark"></i></button></div>
+                    <div v-if="user" class="flex items-center"><p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p><button @click="removeExpense(idx)" class="ml-3 text-red-100 hover:text-red-400 cursor-pointer"><i class="fa-solid fa-xmark"></i></button></div>
+                </div>
+                <div v-if="expenses.length === 0" class="text-center py-20 text-slate-300 text-xs italic">
+                    {{ isGuest ? '訪客模式不顯示記帳資料' : '點擊右下角 + 記一筆' }}
                 </div>
             </div>
         </main>
     </div>
 
-    <div v-if="photoLightboxUrl" class="photo-viewer-overlay" 
-         @touchstart="handleTouchStart" 
-         @touchmove="handleTouchMove" 
-         @touchend="handleTouchEnd"
-         @click="handleViewerClick">
+    <div v-if="photoLightboxUrl" class="photo-viewer-overlay" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @click="handleViewerClick">
         <button class="absolute top-8 right-8 text-white text-3xl opacity-50 z-50"><i class="fa-solid fa-circle-xmark"></i></button>
         <img :src="photoLightboxUrl" class="full-photo" :style="viewerStyle">
-        <div class="zoom-hint">✌️ 雙指縮放照片</div>
+        <div class="zoom-hint">✌️ 雙指縮放或單指拖移</div>
     </div>
 
     <div v-if="showEditModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
         <div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-xl mb-6 text-slate-800 text-center font-bold">編輯行程</h3>
+            <h3 class="font-bold text-xl mb-6 text-slate-800 text-center font-bold font-bold">編輯行程</h3>
             <div class="space-y-3">
                 <select v-model="editingItem.category" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold outline-none text-center appearance-none cursor-pointer"><option value="flight">航班</option><option value="sightseeing">景點</option><option value="food">飲食</option><option value="accommodation">住宿</option><option value="transport">交通</option></select>
-                <input v-model="editingItem.name" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="名稱">
+                <input v-model="editingItem.name" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="行程名稱">
                 <div class="border-2 border-dashed border-slate-100 rounded-xl p-4 text-center cursor-pointer relative" @click="triggerItineraryFileInput"><input type="file" ref="itineraryFileInput" class="hidden" @change="handleItineraryImageUpload"><div v-if="isProcessingImage" class="absolute inset-0 bg-white/80 flex items-center justify-center z-10"><i class="fa-solid fa-spinner animate-spin text-sakura-rose"></i></div><img v-if="editingItem.image" :src="editingItem.image" class="w-full h-32 object-cover rounded-lg mb-2"><p class="text-[10px] text-slate-400 font-bold"><i class="fa-solid fa-image mr-1"></i> 選取並自動縮圖</p></div>
                 <input v-model="editingItem.address" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="地址">
                 <div class="grid grid-cols-2 gap-3"><input v-model="editingItem.startTime" type="text" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="時間"><select v-model="editingItem.transportType" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center appearance-none"><option value="plane">飛機</option><option value="bus">巴士</option><option value="train">火車</option><option value="walk">步行</option></select></div>
-                <textarea v-model="editingItem.description" rows="3" class="w-full bg-blue-50/30 rounded-xl p-4 text-sm outline-none text-left" placeholder="景點介紹..."></textarea>
+                <textarea v-model="editingItem.description" rows="3" class="w-full bg-blue-50/30 rounded-xl p-4 text-sm outline-none text-left" placeholder="景點深度介紹..."></textarea>
                 <input v-model="editingItem.price" type="text" class="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold text-center" placeholder="費用標註">
                 <textarea v-model="editingItem.note" rows="2" class="w-full bg-slate-50 rounded-xl p-4 text-sm outline-none text-left" placeholder="簡短備註..."></textarea>
-                <button @click="deleteItem" class="w-full py-3 bg-red-50 text-red-400 rounded-xl text-xs font-bold cursor-pointer">永久刪除此項目</button>
+                <button @click="deleteItem" class="w-full py-3 bg-red-50 text-red-400 rounded-xl text-xs font-bold cursor-pointer font-bold">永久刪除</button>
             </div>
-            <div class="flex space-x-3 mt-8"><button @click="showEditModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold cursor-pointer">取消</button><button @click="saveItem" class="flex-1 py-4 bg-sakura-rose text-white rounded-2xl font-bold shadow-lg cursor-pointer">儲存修改</button></div>
+            <div class="flex space-x-3 mt-8"><button @click="showEditModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold cursor-pointer text-center font-bold">取消</button><button @click="saveItem" class="flex-1 py-4 bg-sakura-rose text-white rounded-2xl font-bold shadow-lg cursor-pointer text-center font-bold">儲存修改</button></div>
         </div>
     </div>
 
     <button v-if="user && !isLoading" @click="handleAddClick" class="fixed bottom-8 right-8 w-14 h-14 bg-[#FFD54F] rounded-full shadow-lg text-[#01579B] text-2xl flex items-center justify-center z-40 transition-transform active:scale-90 cursor-pointer border-2 border-white"><i class="fa-solid fa-plus"></i></button>
 
-    <div v-if="showShoppingModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3 class="font-bold text-xl mb-6">新增購物</h3><div class="space-y-4"><input v-model="newShoppingItem.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><div @click="triggerFileInput" class="border-2 border-dashed border-slate-100 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer relative"><div v-if="isProcessingImage" class="absolute inset-0 bg-white/80 flex items-center justify-center"><i class="fa-solid fa-spinner animate-spin text-nav-blue"></i></div><input type="file" ref="fileInput" class="hidden" @change="handleImageUpload"><img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="w-full h-32 object-contain"><i v-else class="fa-solid fa-camera text-4xl text-slate-300"></i></div></div><div class="flex space-x-3 mt-8"><button @click="showShoppingModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold cursor-pointer">取消</button><button @click="addShoppingItem" class="flex-1 py-4 bg-nav-blue text-white font-bold rounded-2xl shadow-lg cursor-pointer">新增</button></div></div></div>
-    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3 class="font-bold text-xl mb-6 font-bold text-slate-800 text-center">記一筆開銷</h3><div class="space-y-4"><input v-model="newExp.name" type="text" placeholder="項目" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><input v-model.number="newExp.amount" type="number" placeholder="金額 JPY" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><div class="grid grid-cols-2 gap-3"><select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center cursor-pointer"><option value="飲食">飲食</option><option value="交通">交通</option><option value="購物">購物</option></select><input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 text-sm font-bold"></div></div><div class="flex space-x-3 mt-8"><button @click="showExpenseModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl text-center font-bold cursor-pointer">取消</button><button @click="addExpense" class="flex-1 py-4 bg-sakura-rose text-white font-bold rounded-2xl text-center shadow-lg cursor-pointer">儲存</button></div></div></div>
+    <div v-if="showShoppingModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3 class="font-bold text-xl mb-6 font-bold">新增購物</h3><div class="space-y-4"><input v-model="newShoppingItem.name" type="text" placeholder="品名" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><div @click="triggerFileInput" class="border-2 border-dashed border-slate-100 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer relative"><div v-if="isProcessingImage" class="absolute inset-0 bg-white/80 flex items-center justify-center"><i class="fa-solid fa-spinner animate-spin text-nav-blue"></i></div><input type="file" ref="fileInput" class="hidden" @change="handleImageUpload"><img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="w-full h-32 object-contain"><i v-else class="fa-solid fa-camera text-4xl text-slate-300"></i></div></div><div class="flex space-x-3 mt-8"><button @click="showShoppingModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold cursor-pointer font-bold">取消</button><button @click="addShoppingItem" class="flex-1 py-4 bg-nav-blue text-white font-bold rounded-2xl shadow-lg cursor-pointer font-bold text-center">新增</button></div></div></div>
+    <div v-if="showExpenseModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3 class="font-bold text-xl mb-6 font-bold text-slate-800 text-center font-bold">記一筆開銷</h3><div class="space-y-4"><input v-model="newExp.name" type="text" placeholder="項目" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><input v-model.number="newExp.amount" type="number" placeholder="JPY" class="w-full bg-slate-50 border-none rounded-xl p-4 text-sm font-bold text-center outline-none"><div class="grid grid-cols-2 gap-3"><select v-model="newExp.category" class="bg-slate-50 rounded-xl p-4 text-sm font-bold text-center cursor-pointer"><option value="飲食">飲食</option><option value="交通">交通</option><option value="購物">購物</option></select><input v-model="newExp.date" type="date" class="bg-slate-50 rounded-xl p-4 text-sm font-bold"></div></div><div class="flex space-x-3 mt-8"><button @click="showExpenseModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl text-center font-bold cursor-pointer font-bold">取消</button><button @click="addExpense" class="flex-1 py-4 bg-sakura-rose text-white font-bold rounded-2xl text-center shadow-lg cursor-pointer font-bold">儲存</button></div></div></div>
 </div>
 
 <script type="module">
@@ -190,6 +198,7 @@
             const ADMIN_LIST = ["99aca807-d86a-4566-bcaf-9129834fb965", "QcLYJTmR9mVCfw3U36o2eU9K3Ey2"];
 
             const user = ref(null);
+            const isGuest = ref(false); // 🚀 訪客模式開關
             const isLoading = ref(true);
             const isSyncing = ref(false);
             const isProcessingImage = ref(false);
@@ -214,7 +223,6 @@
             const fileInput = ref(null);
             const itineraryFileInput = ref(null);
 
-            // 🚀 手指縮放與拖移邏輯
             const zoomState = reactive({ scale: 1, lastScale: 1, translateX: 0, translateY: 0, lastX: 0, lastY: 0, baseDist: 0 });
             const viewerStyle = computed(() => ({ transform: `translate(${zoomState.translateX}px, ${zoomState.translateY}px) scale(${zoomState.scale})` }));
 
@@ -228,7 +236,7 @@
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
                             let width = img.width, height = img.height;
-                            const max_size = 1200; // 支援縮放，放寬到 1200px
+                            const max_size = 1200;
                             if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
                             else { if (height > max_size) { width *= max_size / height; height = max_size; } }
                             canvas.width = width; canvas.height = height;
@@ -244,7 +252,7 @@
                     .then(r => r.json()).then(data => { itineraryData.value = data.itineraryData; hotels.value = data.hotels; });
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) { user.value = session.user; await loadCloudData(session.user.id); }
-                supabase.auth.onAuthStateChange(async (event, session) => { if (session) { user.value = session.user; await loadCloudData(session.user.id); } else { user.value = null; } isLoading.value = false; });
+                supabase.auth.onAuthStateChange(async (event, session) => { if (session) { user.value = session.user; await loadCloudData(session.user.id); isGuest.value = false; } else { user.value = null; } isLoading.value = false; });
                 if(!session) isLoading.value = false;
             });
 
@@ -254,13 +262,13 @@
             };
 
             return { 
-                user, isAdmin: computed(() => user.value && ADMIN_LIST.includes(user.value.id)), isLoading, isSyncing, isProcessingImage, currentTab, selectedDateIndex, tabs, dates, itineraryData, hotels, photoLightboxUrl, viewerStyle,
+                user, isGuest, isAdmin: computed(() => user.value && ADMIN_LIST.includes(user.value.id)), isLoading, isSyncing, isProcessingImage, currentTab, selectedDateIndex, tabs, dates, itineraryData, hotels, photoLightboxUrl, viewerStyle,
                 currentItinerary: computed(() => itineraryData.value[selectedDateIndex.value] || []),
                 jpyInput, shoppingList, expenses, totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)), 
                 totalTWD: computed(()=>Math.round(expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)*0.215)),
                 showShoppingModal, showExpenseModal, showEditModal, editingItem, newShoppingItem, newExp, fileInput, itineraryFileInput,
                 login: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL } }),
-                logout: async () => { await supabase.auth.signOut(); user.value = null; },
+                logout: async () => { await supabase.auth.signOut(); user.value = null; isGuest.value = false; },
                 forceSync: async () => {
                     if (!user.value || isSyncing.value) return;
                     isSyncing.value = true;
