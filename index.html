@@ -23,7 +23,7 @@
         .nav-btn { width: 34px; height: 34px; background-color: #4FC3F7; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; shadow: 0 4px 10px rgba(79, 195, 247, 0.3); flex-shrink: 0; cursor: pointer; }
         .sync-btn { position: fixed; top: 16px; right: 16px; z-index: 300; width: 44px; height: 44px; background: #00C853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4); border: 2px solid white; cursor: pointer; }
         .photo-viewer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .full-photo { max-width: 100%; max-height: 90vh; border-radius: 10px; }
+        .full-photo { max-width: 100%; max-height: 90vh; border-radius: 10px; transition: transform 0.1s; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -31,11 +31,11 @@
 <body>
 
 <div id="app" v-cloak class="app-container">
-    <div v-if="!user && !isGuest" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-6 text-center text-left">
+    <div v-if="!user && !isGuest" class="fixed inset-0 bg-[#FFF9FA] z-[1000] flex flex-col items-center justify-center p-6 text-center">
         <div class="bg-white p-6 rounded-[40px] shadow-2xl w-full max-w-sm">
             <h2 class="text-3xl font-black text-sakura-rose mb-6 italic">Hokkaido 2026</h2>
             <button @click="login" class="w-full border-2 border-slate-100 py-4 rounded-2xl font-bold active:scale-95 mb-4 shadow-sm flex items-center justify-center"><img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3"> Google 雲端同步模式</button>
-            <button @click="isGuest = true" class="w-full bg-slate-50 py-4 rounded-2xl font-bold text-slate-500 border border-slate-100">直接查看行程 (訪客)</button>
+            <button @click="isGuest = true" class="w-full bg-slate-50 py-4 rounded-2xl font-bold text-slate-500">訪客直接查看</button>
         </div>
     </div>
 
@@ -57,17 +57,19 @@
                 <div class="flex overflow-x-auto hide-scrollbar space-x-3 pb-4 sticky top-0 bg-white/90 backdrop-blur-md -mx-4 px-4 z-20 text-center">
                     <div v-for="(day, idx) in dates" :key="idx" @click="selectedDateIndex = idx" class="flex-shrink-0 w-[58px] h-[68px] rounded-xl flex flex-col items-center justify-center border-2 transition-all cursor-pointer" :class="selectedDateIndex === idx ? 'bg-sakura-rose text-white border-sakura-rose shadow-md' : 'bg-white text-pink-300 border-pink-50'"><span class="text-sm font-bold uppercase">{{ day.weekday }}</span><span class="text-xs">{{ day.date }}</span></div>
                 </div>
-                <div v-for="(item, index) in currentItinerary" :key="item.id" class="bg-white rounded-[32px] p-5 shadow-sm border border-pink-50 mb-4 relative">
+
+                <div v-for="(item, index) in currentItinerary" :key="item.id" class="bg-white rounded-[32px] p-5 shadow-sm border border-pink-50 relative mb-4">
                     <div class="flex items-start">
                         <div class="mr-4 flex flex-col items-center min-w-[50px]"><div class="p-3 rounded-full bg-pink-50 text-sakura-rose shadow-inner"><i :class="getCategoryIcon(item.category)"></i></div><span class="text-[10px] font-bold text-slate-300 mt-2 text-center">{{ item.startTime }}</span></div>
                         <div class="flex-1">
-                            <div class="flex items-center flex-wrap gap-2"><h3 class="font-bold text-slate-800 text-lg leading-tight">{{ item.name }}</h3><button v-if="item.images && item.images.length > 0" @click="openGallery(item.images)" class="bg-pink-100 text-sakura-rose px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"><i class="fa-solid fa-images mr-1"></i>{{ item.images.length }}張</button></div>
+                            <div class="flex items-center flex-wrap gap-2"><h3 class="text-lg font-bold text-slate-800 leading-tight">{{ item.name }}</h3><button v-if="item.images && item.images.length > 0" @click="openGallery(item.images)" class="bg-pink-100 text-sakura-rose px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm"><i class="fa-solid fa-images mr-1"></i>{{ item.images.length }}張</button></div>
                             <div v-if="item.price" class="mt-1 text-[11px] text-blue-500 font-bold flex items-center font-bold"><i class="fa-solid fa-ticket mr-1.5"></i>費用：{{ item.price }}</div>
-                            <div v-if="item.note" class="mt-2 bg-slate-50 p-3 rounded-xl text-xs text-slate-600 whitespace-pre-line border border-slate-100">{{ item.note }}</div>
+                            <div v-if="item.note" class="mt-2 text-[11px] text-sakura-rose font-bold whitespace-pre-line leading-relaxed"><i class="fa-solid fa-pencil mr-1"></i>{{ item.note }}</div>
+                            <div v-if="item.description" class="mt-3 text-[11px] text-slate-400 border-t pt-2 leading-relaxed whitespace-pre-line">{{ item.description }}</div>
                         </div>
-                        <div class="flex flex-col items-center gap-2">
-                            <button @click="openMap(item.address || item.name)" class="nav-btn ml-2"><i class="fa-solid fa-location-arrow text-xs"></i></button>
-                            <button v-if="isAdmin" @click="openEditModal(item, index)" class="w-7 h-7 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center shadow-sm"><i class="fa-solid fa-pencil text-[10px]"></i></button>
+                        <div class="flex flex-col items-center gap-2 ml-2">
+                            <button @click="openMap(item.address || item.name)" class="nav-btn"><i class="fa-solid fa-location-arrow text-xs"></i></button>
+                            <button v-if="isAdmin" @click="openEditModal(item, index)" class="w-8 h-8 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-[10px]"><i class="fa-solid fa-pencil"></i></button>
                         </div>
                     </div>
                 </div>
@@ -79,7 +81,7 @@
                     <div class="flex items-center space-x-3"><input type="number" v-model="jpyInput" class="flex-1 bg-white/20 border-none rounded-xl px-3 py-2 text-white font-bold outline-none"><i class="fa-solid fa-arrow-right-long text-cyan-300"></i><div class="flex-1 bg-white/10 rounded-xl px-3 py-2 text-white font-bold">$ {{ (jpyInput * 0.215).toFixed(0) }}</div></div>
                 </div>
                 <div class="bg-white rounded-[32px] p-6 shadow-sm border border-slate-50">
-                    <h3 class="font-bold text-slate-800 mb-5 border-b pb-3 flex items-center"><i class="fa-solid fa-hotel text-indigo-400 mr-2"></i> 住宿資訊</h3>
+                    <h3 class="font-bold text-slate-800 mb-5 border-b pb-3 flex items-center text-left"><i class="fa-solid fa-hotel text-indigo-400 mr-2"></i> 住宿資訊</h3>
                     <ul class="space-y-8"><li v-for="hotel in hotels" :key="hotel.name" class="flex justify-between items-start border-b border-slate-50 last:border-0 pb-4"><div class="flex-1"><span class="font-bold block text-slate-700 text-lg leading-tight">{{ hotel.name }}</span><span class="text-[10px] text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-2 font-bold">{{ hotel.date }}</span><div class="text-[11px] text-slate-400 mt-3 space-y-1.5"><p><i class="fa-solid fa-phone w-5"></i>{{ hotel.phone }}</p><p><i class="fa-solid fa-map-pin w-5"></i>{{ hotel.address }}</p></div></div><button @click="openMap(hotel.address)" class="nav-btn"><i class="fa-solid fa-location-arrow text-xs"></i></button></li></ul>
                 </div>
             </div>
@@ -90,18 +92,18 @@
                     <div class="flex-1 min-w-0 text-left">
                         <h4 class="font-bold text-slate-800 truncate">{{ shop.name }}</h4>
                         <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold mt-1 inline-block">{{ shop.date || '未定' }}</span>
-                        <p v-if="shop.note" class="text-[11px] text-slate-400 mt-1 italic">{{ shop.note }}</p>
+                        <p v-if="shop.note" class="text-[11px] text-slate-400 mt-1 italic line-clamp-1">{{ shop.note }}</p>
                     </div>
                     <div class="flex flex-col gap-2">
                         <button @click="openMap(shop.address || shop.name)" class="nav-btn"><i class="fa-solid fa-location-arrow text-xs"></i></button>
-                        <button v-if="user" @click="openEditMustVisitModal(shop, idx)" class="w-7 h-7 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-[10px]"><i class="fa-solid fa-pencil"></i></button>
+                        <button v-if="user" @click="openEditMustVisitModal(shop, idx)" class="w-7 h-7 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center text-[10px]"><i class="fa-solid fa-pencil"></i></button>
                     </div>
                 </div>
             </div>
 
             <div v-if="currentTab === 'shopping'" class="grid grid-cols-2 gap-4 animate-fade-in">
                 <div v-for="(item, idx) in shoppingList" :key="idx" class="bg-white rounded-2xl p-3 shadow-sm border relative text-center">
-                    <div class="aspect-square bg-slate-50 rounded-xl mb-3 overflow-hidden relative shadow-inner" @click="openGallery([item.image])">
+                    <div class="aspect-square bg-slate-50 rounded-xl mb-2 overflow-hidden relative shadow-inner" @click="openGallery([item.image])">
                         <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
                         <i v-else class="fa-solid fa-bag-shopping text-slate-200 text-3xl"></i>
                         <div v-if="user" class="absolute top-2 right-2 flex flex-col gap-1">
@@ -116,14 +118,14 @@
             <div v-if="currentTab === 'expenses'" class="animate-fade-in text-center">
                 <div class="bg-gradient-to-br from-[#D81B60] to-[#EC407A] rounded-[35px] p-8 text-white shadow-xl mb-6 relative"><h2 class="text-5xl font-black">¥ {{ formatNumber(totalJPY) }}</h2><p class="text-sm opacity-80 italic font-bold">約 NT$ {{ formatNumber(totalTWD) }}</p></div>
                 <div v-for="(exp, idx) in expenses" :key="exp.id" class="flex items-center justify-between p-4 bg-white rounded-2xl mb-2 text-left shadow-sm border-b">
-                    <div class="flex items-center"><div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div><div><p class="font-bold text-slate-700 text-sm leading-tight">{{ exp.name }}</p><p class="text-[10px] text-slate-400 mt-0.5 font-bold">{{ exp.date }}</p></div></div>
+                    <div class="flex items-center"><div class="w-10 h-10 rounded-full bg-pink-50 text-sakura-rose flex items-center justify-center mr-3 font-bold text-[10px]">{{ exp.category }}</div><div><p class="font-bold text-slate-700 text-sm leading-tight text-left">{{ exp.name }}</p><p class="text-[10px] text-slate-400 mt-0.5 font-bold text-left">{{ exp.date }}</p></div></div>
                     <div v-if="user" class="flex items-center"><p class="font-bold text-slate-700">¥{{ formatNumber(exp.amount) }}</p><button @click="removeExpense(idx)" class="ml-3 text-red-100 hover:text-red-400 cursor-pointer"><i class="fa-solid fa-xmark"></i></button></div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div v-if="showShoppingModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3>{{ isEditShopping ? '✏️ 編輯購物' : '🛍️ 新增購物' }}</h3><div class="space-y-4"><input v-model="newShoppingItem.name" type="text" placeholder="品名" class="w-full bg-slate-50 p-4 rounded-xl text-center outline-none font-bold"><div @click="triggerFileInput" class="border-2 border-dashed rounded-xl p-10 cursor-pointer relative"><div v-if="isProcessingImage" class="absolute inset-0 flex items-center justify-center bg-white/80"><i class="fa-solid fa-spinner animate-spin text-nav-blue"></i></div><input type="file" ref="fileInput" class="hidden" @change="handleImageUpload"><img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="w-full h-32 object-contain"><i v-else class="fa-solid fa-camera text-4xl text-slate-300"></i></div></div><div class="flex space-x-3 mt-8"><button @click="showShoppingModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold">取消</button><button @click="saveShoppingItem" class="flex-1 py-4 bg-nav-blue text-white rounded-2xl font-bold shadow-lg">儲存</button></div></div></div>
+    <div v-if="showShoppingModal" class="fixed inset-0 z-[1100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center shadow-2xl"><h3>{{ isEditShopping ? '✏️ 編輯購物' : '🛍️ 新增購物' }}</h3><div class="space-y-4"><input v-model="newShoppingItem.name" type="text" placeholder="商品名稱" class="w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none"><div @click="triggerFileInput" class="border-2 border-dashed rounded-xl p-10 cursor-pointer relative"><div v-if="isProcessingImage" class="absolute inset-0 flex items-center justify-center bg-white/80"><i class="fa-solid fa-spinner animate-spin text-nav-blue"></i></div><input type="file" ref="fileInput" class="hidden" @change="handleImageUpload"><img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="w-full h-32 object-contain"><i v-else class="fa-solid fa-camera text-4xl text-slate-300"></i></div></div><div class="flex space-x-3 mt-8"><button @click="showShoppingModal = false" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold">取消</button><button @click="saveShoppingItem" class="flex-1 py-4 bg-nav-blue text-white rounded-2xl font-bold shadow-lg shadow-blue-200">儲存</button></div></div></div>
 
     <button v-if="user" @click="handleAddClick" class="fixed bottom-8 right-8 w-14 h-14 bg-[#FFD54F] rounded-full shadow-lg text-[#01579B] text-2xl flex items-center justify-center z-40 active:scale-90 border-2 border-white"><i class="fa-solid fa-plus"></i></button>
     <div v-if="galleryList.length > 0" class="photo-viewer-overlay" @click="galleryList = []"><img :src="galleryList[galleryIndex]" class="full-photo"></div>
@@ -141,21 +143,21 @@
             const currentTab = ref('itinerary'); const user = ref(null); const isGuest = ref(false); const isSyncing = ref(false); const isProcessingImage = ref(false);
             const selectedDateIndex = ref(0); const jpyInput = ref(50000); const galleryList = ref([]); const galleryIndex = ref(0);
 
-            // 🌸 行程數據恢復：含完整備註
+            // 🌸 數據恢復：手動恢復 Day 1-7 所有詳細備忘
             const itineraryData = ref([
-                [ { id: 101, name: '桃園機場報到', startTime: '10:00', category: 'flight', note: '中華航空 CI0130 12:00 起飛', images: [] }, { id: 104, name: 'JRイン函館 Check-in', startTime: '18:15', category: 'accommodation', note: '飯店放行李', images: [] }, { id: 105, name: '晚餐：幸運小丑漢堡', startTime: '19:30', category: 'food', note: '中華雞腿漢堡、蔬菜湯咖哩。', images: [] } ],
-                [ { id: 200, name: '五稜郭公園', startTime: '08:30', price: '¥1,080', note: '賞櫻星型要塞與五稜郭塔。', images: [] }, { id: 203, name: '函館山夜景', startTime: '17:30', price: '纜車 ¥1,800', note: '世界三大夜景。', images: [] } ],
-                [ { id: 304, name: '洞爺湖萬世閣飯店', startTime: '10:13', address: '北海道虻田郡洞爺湖町洞爺湖温泉21', note: '辦理手續放行李', images: [] } ],
-                [ { id: 405, name: 'ADEX INN Check-in', startTime: '13:30', address: '北海道登別市登別温泉町76', images: [] }, { id: 406, name: '登別巡禮', startTime: '14:00', note: '地獄谷 → 大湯沼 → 天然足湯', images: [] } ],
-                [ { id: 502, name: '尼克斯海洋公園', startTime: '09:30', price: '¥3,000', note: '10:00 海豚表演\n11:00 企鵝遊行\n11:50 沙丁魚秀', images: [] }, { id: 505, name: '札幌王⼦⼤飯店', startTime: '15:30', address: '北海道札幌市中央区南2条西11丁目', images: [] } ],
-                [ { id: 601, name: '前往小樽', startTime: '07:30', note: '接駁車 7:30 出發', images: [] }, { id: 605, name: '藻岩山夜景', startTime: '16:00', price: '¥2,460', images: [] } ],
-                [ { id: 701, name: '新千歲機場', startTime: '11:30', note: '預約 9:30 接駁車', images: [] }, { id: 702, name: '返台航班', startTime: '16:25', category: 'flight', note: 'CI0131 返台', images: [] } ]
+                [ { id: 101, name: '桃園機場報到', startTime: '10:00', category: 'flight', note: '中華航空 CI0130 12:00 起飛', images: [] }, { id: 102, name: '抵達函館機場', startTime: '16:45', note: '辦理入境與領取行李', description: '抵達後先換匯或購買車票。', images: [] }, { id: 103, name: '函館帝產巴士', startTime: '17:30', price: '¥700', note: '國內線14, 22站台搭車', images: [] }, { id: 104, name: 'JRイン函館 Check-in', startTime: '18:15', category: 'accommodation', note: '飯店辦理入住', images: [] }, { id: 105, name: '晚餐：幸運小丑漢堡', startTime: '19:30', category: 'food', note: '中華雞腿漢堡、蔬菜湯咖哩。', images: [] } ],
+                [ { id: 200, name: '五稜郭公園', startTime: '08:30', hours: '09:00 - 19:00', price: '¥1,080', stayDuration: '2.5小時', note: '賞櫻星型要塞', images: [] }, { id: 201, name: '函館朝市', startTime: '12:00', category: 'food', note: '享用新鮮帝王蟹與海鮮丼', images: [] }, { id: 203, name: '函館山夜景', startTime: '17:30', price: '纜車 ¥1,800', note: '世界三大夜景', images: [] } ],
+                [ { id: 301, name: 'JR 前往洞爺站', startTime: '07:30', price: '¥6,250', note: '9:30 到達', images: [] }, { id: 304, name: '洞爺湖萬世閣飯店', startTime: '10:13', address: '〒049-5721 北海道虻田郡洞爺湖町洞爺湖温泉21', note: '放行李辦手續', images: [] } ],
+                [ { id: 405, name: 'ADEX INN Check-in', startTime: '13:30', address: '〒059-0551 北海道登別市登別温泉町76', images: [] }, { id: 406, name: '登別巡禮', startTime: '14:00', description: '地獄谷瞭望台 → 大湯沼 → 天然足湯 → 閻魔堂。', images: [] } ],
+                [ { id: 502, name: '尼克斯海洋公園', startTime: '09:30', price: '¥3,000', note: '10:00 海豚 / 11:00 企鵝 / 11:50 沙丁魚', images: [] }, { id: 505, name: '札幌王⼦⼤飯店', startTime: '15:30', note: '入住飯店完成手續', images: [] } ],
+                [ { id: 601, name: '前往小樽', startTime: '07:30', note: '接駁車 7:30 啟程', images: [] }, { id: 602, name: '小樽堺町通商店街', startTime: '09:00', description: '音樂盒、音樂館。', images: [] }, { id: 605, name: '藻岩山夜景', startTime: '16:00', price: '¥2,460', note: '18:30 離開', images: [] } ],
+                [ { id: 701, name: 'JR 前往機場', startTime: '11:30', note: '接駁車 9:30 需預約', images: [] }, { id: 702, name: '新千歲 → 桃園', startTime: '16:25', category: 'flight', note: '預計 19:35 到達 (CI0131)', images: [] } ]
             ]);
 
             const hotels = ref([{ name: 'JRイン函館', date: '5/6 - 5/8', address: '〒040-0063 北海道函館市若松町12-14' }, { name: '札幌王⼦⼤飯店', date: '5/10 - 5/12', address: '〒060-0002 北海道札幌市中央区南2条西11丁目' }]);
             const shoppingList = ref([]); const expenses = ref([]); const mustVisitList = ref([]);
 
-            // ✨ 通用圖片壓縮
+            // ✨ 通用強力壓縮邏輯
             const compressImage = (file) => {
                 return new Promise((resolve) => {
                     const reader = new FileReader(); reader.readAsDataURL(file);
@@ -164,8 +166,7 @@
                         img.onload = () => {
                             const canvas = document.createElement('canvas'); 
                             let width = img.width, height = img.height, max = 800;
-                            if (width > height) { if (width > max) { height *= max / width; width = max; } }
-                            else { if (height > max) { width *= max / height; height = max; } }
+                            if (width > height) { if (width > max) { height *= max / width; width = max; } } else { if (height > max) { width *= max / height; height = max; } }
                             canvas.width = width; canvas.height = height;
                             canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                             resolve(canvas.toDataURL('image/jpeg', 0.6));
@@ -175,10 +176,10 @@
             };
 
             onMounted(async () => {
-                const saved = localStorage.getItem('sakura_master_v21');
+                const saved = localStorage.getItem('sakura_v18_final_full');
                 if (saved) {
                     const data = JSON.parse(saved);
-                    if (data.i) itineraryData.value = data.i;
+                    if (data.i && data.i[0].length > 0) itineraryData.value = data.i;
                     shoppingList.value = data.s || []; expenses.value = data.e || []; mustVisitList.value = data.m || [];
                 }
                 const { data: { session } } = await supabase.auth.getSession();
@@ -186,15 +187,15 @@
             });
 
             watch([itineraryData, expenses, shoppingList, mustVisitList], () => {
-                localStorage.setItem('sakura_master_v21', JSON.stringify({ i: itineraryData.value, s: shoppingList.value, e: expenses.value, m: mustVisitList.value }));
+                localStorage.setItem('sakura_v18_final_full', JSON.stringify({ i: itineraryData.value, s: shoppingList.value, e: expenses.value, m: mustVisitList.value }));
             }, { deep: true });
 
             const forceSync = async () => {
                 if (!user.value || isSyncing.value) return; isSyncing.value = true;
                 try { 
                     const { error } = await supabase.from('user_data').upsert({ id: user.value.id, expenses: JSON.parse(JSON.stringify(expenses.value)), shopping: JSON.parse(JSON.stringify(shoppingList.value)), must_visit: JSON.parse(JSON.stringify(mustVisitList.value)), last_update: new Date() }); 
-                    if (error) throw error; alert("✅ 4/23 同步成功！"); 
-                } catch (e) { alert("❌ 同步失敗 (照片可能過多)"); } finally { isSyncing.value = false; }
+                    if (error) throw error; alert("✅ 同步成功！時間：" + new Date().toLocaleString()); 
+                } catch (e) { alert("❌ 同步失敗 (請確認資料庫欄位)"); } finally { isSyncing.value = false; }
             };
 
             const showShoppingModal = ref(false); const isEditShopping = ref(false); const editShoppingIndex = ref(null);
@@ -203,7 +204,7 @@
             const newMustVisit = ref({ name: '', address: '', date: '', note: '' });
 
             return { 
-                user, isGuest, isSyncing, isProcessingImage, currentTab, tabs: [{ id: 'itinerary', icon: 'fa-solid fa-map-location-dot' }, { id: 'info', icon: 'fa-solid fa-circle-info' }, { id: 'mustvisit', icon: 'fa-solid fa-store' }, { id: 'shopping', icon: 'fa-solid fa-basket-shopping' }, { id: 'expenses', icon: 'fa-solid fa-coins' }], dates: ref([{ date: '5/6', weekday: 'WED' }, { date: '5/7', weekday: 'THU' }, { date: '5/8', weekday: 'FRI' }, { date: '5/9', weekday: 'SAT' }, { date: '5/10', weekday: 'SUN' }, { date: '5/11', weekday: 'MON' }, { date: '5/12', weekday: 'TUE' }]), selectedDateIndex, itineraryData, shoppingList, expenses, mustVisitList, hotels, jpyInput, galleryList, galleryIndex,
+                user, isGuest, isSyncing, isProcessingImage, currentTab, tabs: [ { id: 'itinerary', icon: 'fa-solid fa-map-location-dot' }, { id: 'info', icon: 'fa-solid fa-circle-info' }, { id: 'mustvisit', icon: 'fa-solid fa-store' }, { id: 'shopping', icon: 'fa-solid fa-basket-shopping' }, { id: 'expenses', icon: 'fa-solid fa-coins' } ], dates: ref([{ date: '5/6', weekday: 'WED' }, { date: '5/7', weekday: 'THU' }, { date: '5/8', weekday: 'FRI' }, { date: '5/9', weekday: 'SAT' }, { date: '5/10', weekday: 'SUN' }, { date: '5/11', weekday: 'MON' }, { date: '5/12', weekday: 'TUE' }]), selectedDateIndex, itineraryData, shoppingList, expenses, mustVisitList, hotels, jpyInput, galleryList, galleryIndex,
                 isAdmin: computed(() => user.value && ADMIN_LIST.includes(user.value.id)),
                 currentItinerary: computed(() => itineraryData.value[selectedDateIndex.value] || []),
                 totalJPY: computed(()=>expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)), totalTWD: computed(()=>Math.round(expenses.value.reduce((s,e)=>s+(Number(e.amount)||0),0)*0.215)),
